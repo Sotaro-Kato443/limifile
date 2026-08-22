@@ -1,0 +1,61 @@
+---
+import { ChevronDown } from "@lucide/astro";
+import type { ToolPageKey } from "../config/tool-page-config";
+import { buildLocalizedPagePath } from "../config/public-pages";
+import { getDictionary } from "../i18n/get-dictionary";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+import { getPageContent } from "../i18n/get-page-content";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  /**
+   * 現在表示中のページのkey。呼び出し側(ToolPageLayout等)が明示し、URLから再解決しない。
+   * 信頼ページ(InfoPageLayout)等、ツールページ一覧に該当項目が無いページからは省略でき、
+   * その場合は全項目current=falseになる。
+   */
+  currentKey?: ToolPageKey;
+}
+
+const { locale, currentKey } = Astro.props;
+const dictionary = getDictionary(locale);
+const purposeGroups = getPageContent(locale).home.purposeGroups;
+const hasCurrentTool = purposeGroups.some((group) =>
+  group.links.some((link) => link.page === currentKey),
+);
+---
+
+<nav class="site-nav" aria-label={dictionary.nav.ariaLabel}>
+  <details class:list={["site-nav__menu", hasCurrentTool && "site-nav__menu--current"]}>
+    <summary class="site-nav__trigger">
+      <span>{dictionary.nav.ariaLabel}</span>
+      <ChevronDown class="site-nav__chevron" size={16} stroke-width={2} aria-hidden="true" />
+    </summary>
+
+    <div class="site-nav__panel">
+      {
+        purposeGroups.map((group, groupIndex) => {
+          const headingId = `site-nav-group-${locale}-${groupIndex}`;
+
+          return (
+            <section class="site-nav__group" aria-labelledby={headingId}>
+              <h2 id={headingId}>{group.title}</h2>
+              <ul class="site-nav__list">
+                {group.links.map((link) => (
+                  <li>
+                    <a
+                      class="site-nav__link"
+                      href={buildLocalizedPagePath(locale, link.page)}
+                      aria-current={currentKey === link.page ? "page" : undefined}
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      }
+    </div>
+  </details>
+</nav>

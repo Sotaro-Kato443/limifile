@@ -1,0 +1,77 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import LanguageSwitcher from "../components/LanguageSwitcher.astro";
+import BrandLogo from "../components/BrandLogo.astro";
+import { BRAND_NAME } from "../config/brand";
+import {
+  buildLocalizedPagePath,
+  buildPageAlternateUrls,
+  buildXDefaultUrl,
+  resolvePublicPageKeyStrict,
+} from "../config/public-pages";
+import { isGlobalIndexingEnabled, resolveIsIndexable } from "../config/site-indexing";
+import { stripLocalePrefix } from "../i18n/urls";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+/** ツールページ以外の通常ページ(信頼ページ)のkey。ツールナビ・ツールカードの対象外 */
+export type InfoPageKey = "privacy" | "terms" | "contact";
+
+interface Props {
+  /** このページのロケール。暗黙のfallbackは行わないため、呼び出し側は必ず明示する */
+  locale: ImplementedLocaleKey;
+  /** このページのkey。Astro.url.pathnameから暗黙に解決せず、呼び出し側(route file)が明示する */
+  pageKey: InfoPageKey;
+  title: string;
+  description: string;
+}
+
+const { locale, pageKey, title, description } = Astro.props;
+
+// 実際のURLとprops(locale・pageKey)が一致することをbuild時に検証する(ToolPageLayoutと同じ方針)。
+const { locale: urlLocale, pathname: urlPathnameWithoutLocale } = stripLocalePrefix(
+  Astro.url.pathname,
+);
+const resolvedKey = resolvePublicPageKeyStrict(urlPathnameWithoutLocale);
+if (urlLocale !== locale || resolvedKey !== pageKey) {
+  throw new Error(
+    `InfoPageLayout: props (locale="${locale}", pageKey="${pageKey}") do not match the actual URL ` +
+      `"${Astro.url.pathname}" (resolved locale="${urlLocale}", key="${resolvedKey}").`,
+  );
+}
+
+// 信頼ページは常にpage-level indexable=falseで、PUBLIC_ALLOW_INDEXINGの値に関わらずnoindexのまま
+// (resolveIsIndexableのAND条件により、全体ゲートがtrueになってもfalseのままになる)。
+const globalIndexingEnabled = isGlobalIndexingEnabled(import.meta.env.PUBLIC_ALLOW_INDEXING);
+const isIndexable = resolveIsIndexable(globalIndexingEnabled, false);
+
+const pageTitle = `${title} | ${BRAND_NAME}`;
+const origin = Astro.site ? Astro.site.toString().replace(/\/+$/, "") : "";
+const canonicalPath = buildLocalizedPagePath(locale, pageKey);
+const alternateUrls = buildPageAlternateUrls(origin, pageKey);
+const xDefaultUrl = buildXDefaultUrl(origin, pageKey);
+const homeHref = buildLocalizedPagePath(locale, "default");
+---
+
+<BaseLayout
+  locale={locale}
+  title={pageTitle}
+  description={description}
+  canonicalPath={canonicalPath}
+  indexable={isIndexable}
+  alternateUrls={alternateUrls}
+  xDefaultUrl={xDefaultUrl}
+>
+  <header class="site-header">
+    <div class="site-header__bar">
+      <a class="site-header__brand" href={homeHref}><BrandLogo /></a>
+      <SiteNav locale={locale} />
+      <LanguageSwitcher locale={locale} pageKey={pageKey} />
+    </div>
+  </header>
+  <main>
+    <slot />
+  </main>
+  <SiteFooter locale={locale} currentKey={pageKey} />
+</BaseLayout>

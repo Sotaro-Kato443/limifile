@@ -1,0 +1,51 @@
+---
+import { getDictionary } from "../i18n/get-dictionary";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+import { buildLocalizedPagePath, type PublicPageKey } from "../config/public-pages";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  /** フッターリンクのうち現在ページと一致するものにaria-current="page"を付ける。省略可 */
+  currentKey?: PublicPageKey;
+}
+
+const { locale, currentKey } = Astro.props;
+const dictionary = getDictionary(locale);
+
+const links: Array<{ key: PublicPageKey; href: string; label: string }> = [
+  {
+    key: "licenses",
+    href: buildLocalizedPagePath(locale, "licenses"),
+    label: dictionary.footer.licenses,
+  },
+  {
+    key: "privacy",
+    href: buildLocalizedPagePath(locale, "privacy"),
+    label: dictionary.footer.privacy,
+  },
+  { key: "terms", href: buildLocalizedPagePath(locale, "terms"), label: dictionary.footer.terms },
+  {
+    key: "contact",
+    href: buildLocalizedPagePath(locale, "contact"),
+    label: dictionary.footer.contact,
+  },
+];
+---
+
+<footer class="site-footer">
+  <ul class="site-footer__list">
+    {
+      links.map((link) => (
+        <li>
+          <a
+            class="site-footer__link"
+            href={link.href}
+            aria-current={currentKey === link.key ? "page" : undefined}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</footer>

@@ -1,0 +1,30 @@
+---
+import RichParagraph from "./RichParagraph.astro";
+import type { TrustSection } from "../i18n/trust-content-types";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  sections: TrustSection[];
+}
+
+const { locale, sections } = Astro.props;
+---
+
+{
+  sections.map((section) => (
+    <section class="trust-section">
+      <h2>{section.heading}</h2>
+      {section.paragraphs.map((paragraph) => (
+        <RichParagraph locale={locale} segments={paragraph} />
+      ))}
+      {section.listItems && (
+        <ul>
+          {section.listItems.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  ))
+}

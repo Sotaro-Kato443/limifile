@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteFooter from "../SiteFooter.astro";
+import LanguageSwitcher from "../LanguageSwitcher.astro";
+import BrandLogo from "../BrandLogo.astro";
+import LicensesContentEn from "../licenses/LicensesContentEn.astro";
+import LicensesContentJa from "../licenses/LicensesContentJa.astro";
+import { BRAND_NAME, LEGACY_BRAND_NAME } from "../../config/brand";
+import { buildLocalizedPagePath, buildPageAlternateUrls, buildXDefaultUrl } from "../../config/public-pages";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+
+const TITLES: Record<ImplementedLocaleKey, string> = {
+  en: "Open Source Licenses",
+  ja: "オープンソースライセンス",
+};
+const DESCRIPTIONS: Record<ImplementedLocaleKey, string> = {
+  en: `A list of the third-party open source software used by ${BRAND_NAME} — name, version, license, copyright notice, and official source for each.`,
+  ja: `${BRAND_NAME}が利用している第三者オープンソースソフトウェアの名称・バージョン・ライセンス・著作権表示・公式ソースの一覧です。`,
+};
+const LEGACY_NOTICES: Record<ImplementedLocaleKey, string> = {
+  en: `${BRAND_NAME} was previously developed under the name ${LEGACY_BRAND_NAME}. The legacy name remains in this page's detailed audit wording and in the published HEIC source-package filename so existing links, hashes, and compliance records stay verifiable.`,
+  ja: `${BRAND_NAME}は以前、${LEGACY_BRAND_NAME}の名称で開発されていました。既存リンク・ハッシュ・コンプライアンス記録の検証可能性を保つため、このページの詳細な監査文言と公開済みHEICソースパッケージ名には旧称が残っています。`,
+};
+
+const pageTitle = `${TITLES[locale]} | ${BRAND_NAME}`;
+const origin = Astro.site ? Astro.site.toString().replace(/\/+$/, "") : "";
+const canonicalPath = buildLocalizedPagePath(locale, "licenses");
+const alternateUrls = buildPageAlternateUrls(origin, "licenses");
+const xDefaultUrl = buildXDefaultUrl(origin, "licenses");
+const homeHref = buildLocalizedPagePath(locale, "default");
+---
+
+<BaseLayout
+  locale={locale}
+  title={pageTitle}
+  description={DESCRIPTIONS[locale]}
+  canonicalPath={canonicalPath}
+  indexable={false}
+  alternateUrls={alternateUrls}
+  xDefaultUrl={xDefaultUrl}
+>
+  <header class="site-header">
+    <div class="site-header__bar">
+      <a class="site-header__brand" href={homeHref}><BrandLogo /></a>
+      <LanguageSwitcher locale={locale} pageKey="licenses" />
+    </div>
+  </header>
+  <main>
+    <h1>{TITLES[locale]}</h1>
+    <p class="license-note" role="note">{LEGACY_NOTICES[locale]}</p>
+    {locale === "en" ? <LicensesContentEn /> : <LicensesContentJa />}
+  </main>
+  <SiteFooter locale={locale} currentKey="licenses" />
+</BaseLayout>

@@ -1,0 +1,1739 @@
+/*
+ * 配色はダークを基準(:root)に置き、ライトを@media (prefers-color-scheme: light)の
+ * 派生として定義する。これは「暗い地色の方が写真の色を歪めずに見られる」という
+ * 画像ツール固有の理由による設計上の既定であって、ライトを軽視するものではない。
+ * HEIC変換の流入はiPhoneユーザーが中心で、iOSの初期値はライトであるため、
+ * ライト側も同じ精度で維持すること。
+ *
+ * 色は必ずこのトークン経由で参照し、コンポーネント側に生の色値を書かない。
+ * ここを守っている限り、配色の変更はこのブロックだけで完結する。
+ */
+:root {
+  color-scheme: dark light;
+
+  --color-bg: #14191b;
+  /* 地色から一段持ち上げた面。ドロップゾーン・カード・リスト項目に使う */
+  --color-surface: #1b2225;
+  --color-surface-2: #232b2e;
+  --color-fg: #e9eff0;
+  --color-muted: #94a3a6;
+  --color-border: #2d3639;
+  --color-border-strong: #435055;
+  --color-accent: #4fbfa8;
+  /* アクセント面の上に乗せる文字色。--color-fgではコントラストが足りない */
+  --color-accent-ink: #06211d;
+  /* 「サーバーに送らない」の主張を置く、アクセントを薄く敷いた面 */
+  --color-accent-soft: #17302e;
+  --color-error: #f28b82;
+  --color-warning: #e3b264;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --button-height: 2.75rem;
+  --shadow-menu: 0 18px 48px rgb(0 0 0 / 35%);
+  /* 本文の折り返し幅。読みやすさの上限であり、レイアウト幅(main)とは別物 */
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #f0f3f3;
+    --color-surface: #ffffff;
+    --color-surface-2: #f6f8f8;
+    --color-fg: #161e20;
+    --color-muted: #5a686b;
+    --color-border: #d9e0e1;
+    --color-border-strong: #b9c4c6;
+    --color-accent: #1f6f66;
+    --color-accent-ink: #ffffff;
+    --color-accent-soft: #e3efed;
+    --color-error: #b3261e;
+    --color-warning: #7a4f12;
+    --shadow-menu: 0 18px 48px rgb(22 30 32 / 16%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* フォーカスリングを全インタラクティブ要素で統一する。ブラウザ既定のoutlineに頼らない */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.faq-item__summary:focus-visible,
+.site-nav__trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}
+
+.site-header {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+}
+
+/* ヘッダーの内容をmainと同じ軸に揃える。ツール一覧はポップオーバーへ集約し、
+   ツール数が増えてもヘッダー自体は1行のまま維持する。 */
+.site-header__bar {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.site-header__brand {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-nav {
+  margin-left: var(--space-1);
+}
+
+.site-nav__menu {
+  position: relative;
+}
+
+.site-nav__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.site-nav__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav__trigger:hover,
+.site-nav__menu[open] > .site-nav__trigger {
+  color: var(--color-fg);
+  background: var(--color-surface-2);
+}
+
+.site-nav__menu--current > .site-nav__trigger {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.site-nav__chevron {
+  flex: none;
+  transition: transform 150ms ease;
+}
+
+.site-nav__menu[open] .site-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.site-nav__panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  width: min(42rem, calc(100vw - 2 * var(--space-4)));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.site-nav__group {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+}
+
+.site-nav__group + .site-nav__group {
+  border-left: 1px solid var(--color-border);
+}
+
+.site-nav__group h2 {
+  margin: 0 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.site-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.site-nav__link {
+  display: block;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-fg);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.site-nav__link:hover {
+  background: var(--color-surface-2);
+}
+
+.site-nav__link[aria-current="page"] {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-weight: 600;
+}
+
+.language-switcher {
+  margin-left: auto;
+}
+
+.language-switcher__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.language-switcher__link {
+  display: inline-block;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.language-switcher__link:hover {
+  color: var(--color-fg);
+  background: var(--color-surface-2);
+}
+
+.language-switcher__link[aria-current="page"] {
+  color: var(--color-fg);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-2);
+  font-weight: 600;
+}
+
+.home-tool-groups {
+  margin-top: 1.5rem;
+  max-width: 560px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.home-tool-groups > h2 {
+  margin: 0 0 var(--space-4);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.home-tool-group + .home-tool-group {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.home-tool-group__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.home-tool-group__icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, transparent);
+  border-radius: var(--radius-pill);
+}
+
+.home-tool-group__heading h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tool-cards__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.home-tool-group__list > .tool-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.tool-card {
+  display: flex;
+}
+
+.tool-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.tool-card__link:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-2);
+}
+
+.tool-card__title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.tool-card__description {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.tool-card__formats {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.home-analyze-cta {
+  max-width: 560px;
+  min-height: 64px;
+  margin: var(--space-6) auto 0;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.home-analyze-cta strong {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.home-analyze-cta span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.home-analyze-cta:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-2);
+}
+
+.home-analysis {
+  scroll-margin-top: var(--space-4);
+}
+
+/*
+ * 共通ボタンスタイル。「主操作(btn-primary)」「副操作(btn-secondary)」の見た目を
+ * 全ページで統一するための最小限のクラス。個別のクラス(compress-target__submit等)は
+ * レイアウト上のmargin等、文脈固有の調整のみを担う。
+ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1.1rem;
+  color: var(--color-accent-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  color: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-8);
+}
+
+.home-page {
+  padding-top: var(--space-6);
+}
+
+/*
+ * ツールページでは見出しと導入文を中央に置き、視線をそのまま直下のドロップゾーンへ
+ * 落とす。主要アクションと competing する要素を上に作らないための配置。
+ */
+h1 {
+  font-size: clamp(1.65rem, 4.5vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 0;
+  text-align: center;
+}
+
+.lede {
+  color: var(--color-muted);
+  font-size: 1.02rem;
+  max-width: 46ch;
+  margin: var(--space-3) auto 0;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.home-page h1 {
+  font-size: clamp(1.65rem, 4.5vw, 1.9rem);
+}
+
+.home-page .lede {
+  line-height: 1.55;
+}
+
+.image-workbench {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+/*
+ * ドロップゾーンはツールページで唯一の主役。見出しより強い存在感を持たせ、
+ * 「ここに入れれば終わる」以外の解釈が生まれないようにする。
+ */
+.image-drop-zone {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+/*
+ * ドラッグ中は色だけで区別しない。破線→実線という形の変化を併せることで、
+ * 色覚特性やコントラストの条件に依らず状態が読み取れるようにする。
+ */
+.image-drop-zone--active {
+  border-style: solid;
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.image-drop-zone:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.image-drop-zone__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.image-drop-zone__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.image-drop-zone__title {
+  font-weight: 600;
+  font-size: 1.12rem;
+  letter-spacing: -0.015em;
+}
+
+.image-drop-zone__hint {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+/*
+ * labelの中に置く擬似ボタン。実際のクリック対象はlabel(=input)であり、
+ * ここをbuttonにするとlabelとの二重操作になるため、見た目のみを担う。
+ */
+.image-drop-zone__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-height);
+  margin-top: var(--space-3);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.image-drop-zone__label:hover .image-drop-zone__cta {
+  opacity: 0.88;
+}
+
+.image-drop-zone__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * 「サーバーに送らない」は本製品の存在理由そのものなので、注釈(小さい灰色文字)ではなく
+ * ドロップゾーン直下の第一級要素として扱う。広告まみれの変換サイト群との差が
+ * 一目で伝わる位置に置くことが目的。
+ */
+.privacy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-soft);
+  color: var(--color-fg);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.privacy-notice__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-top: 0.1rem;
+  color: var(--color-accent);
+}
+
+.image-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.image-list__clear-all {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.image-list__items {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.image-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.image-list-item__thumbnail {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  flex-shrink: 0;
+}
+
+.image-list-item__details {
+  flex: 1;
+  min-width: 0;
+}
+
+.image-list-item__name {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.image-list-item__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.image-list-item__status {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+.image-list-item__status--error {
+  color: var(--color-error);
+}
+
+.image-list-item__warning {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-warning);
+}
+
+.image-list-item__debug {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.image-list-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.image-list-item__preview-trigger {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  color: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.image-list-item__download {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+}
+
+.image-list-item__save-trigger {
+  background: none;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.image-list-item__download--secondary {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.image-list-item__share-trigger {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.image-list-item__save-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-error);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+.image-list-item__ios-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.image-preview-dialog {
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  max-width: min(92vw, 720px);
+  max-height: 92vh;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.image-preview-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.image-preview-dialog__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  max-height: 92vh;
+  overflow: auto;
+}
+
+.image-preview-dialog__close {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.image-preview-dialog__image {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.image-list-item__remove {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  color: var(--color-error);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/*
+ * ツール下の解説はSEO上の流入源なのでページ上に残すが、主要アクションと視線を
+ * 奪い合わせない。区切り罫で「ここから先は読み物」と明示し、各セクションを
+ * 同じリズムで積む。
+ */
+.tool-page-notes,
+.tool-page-faq,
+.tool-page-related {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+  max-width: var(--measure);
+}
+
+.tool-page-notes h2,
+.tool-page-faq h2,
+.tool-page-related h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-3);
+}
+
+.tool-page-notes ul,
+.tool-page-notes ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.tool-page-notes li {
+  margin-bottom: 0.35rem;
+}
+
+/*
+ * 仕様表。「サーバーに送らない」を情緒(privacy-notice)だけでなく検証可能な事実としても
+ * 示すための要素で、ドロップゾーン直下に置く。箇条書きより構造が明確なため、
+ * スクリーンリーダーでの読み上げも改善する。
+ */
+.tool-specs {
+  margin-top: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.tool-specs__heading {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.tool-specs__list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) 1fr;
+}
+
+.tool-specs__list dt {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.tool-specs__list dd {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* 最初の行だけは見出し帯との罫が二重になるため消す */
+.tool-specs__list dt:first-of-type,
+.tool-specs__list dt:first-of-type + dd {
+  border-top: 0;
+}
+
+@media (max-width: 420px) {
+  .tool-specs__list {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-specs__list dt {
+    padding-bottom: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tool-specs__list dd {
+    padding-top: var(--space-1);
+    border-top: 0;
+  }
+
+  .tool-specs__list dt:first-of-type + dd {
+    border-top: 0;
+  }
+}
+
+.faq-list {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.faq-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.faq-item__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--button-height);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 0.15s ease;
+}
+
+.faq-item__summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item__summary:focus-visible {
+  outline-offset: -3px;
+}
+
+.faq-item__summary::marker {
+  content: "";
+}
+
+.faq-item__summary::after {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  content: "";
+  transform: translateY(-0.15rem) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.faq-item__summary:hover {
+  background: var(--color-surface-2);
+}
+
+.faq-item[open] .faq-item__summary {
+  background: var(--color-surface-2);
+}
+
+.faq-item[open] .faq-item__summary::after {
+  transform: translateY(0.15rem) rotate(225deg);
+}
+
+.faq-item__summary h3 {
+  font-size: 0.98rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.faq-item__answer {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.faq-item__answer p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+}
+
+.related-links {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.related-links li {
+  margin-bottom: 0.35rem;
+}
+
+/*
+ * トップページ用のコンパクト表示(PopularSizesLinks variant="inline")。
+ * ツールカード直下に置く小さな導線であり、独立した大きなセクションに見せない。
+ * 区切りの中黒は装飾なのでCSSの::afterで出し、リンクテキスト自体には含めない
+ * (スクリーンリーダーがリンク名として読み上げないようにするため)。
+ * flex-wrapにより、狭い画面では自然に折り返す。
+ */
+.tool-page-popular-sizes--inline {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+.tool-page-popular-sizes--inline h2 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.popular-sizes-inline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5rem;
+  /* 折り返した行同士のタップ領域が近づきすぎないよう、行間は列間より広く取る */
+  row-gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* inline表示でもタップ領域の高さを確保する(狭い画面では3行に折り返すため) */
+.popular-sizes-inline a {
+  display: inline-block;
+  padding-block: 0.2rem;
+}
+
+.popular-sizes-inline li:not(:last-child)::after {
+  content: "·";
+  margin-left: 0.5rem;
+  color: var(--color-muted);
+}
+
+.compress-workbench__unsupported {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.compress-workbench__format-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.compress-target {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.compress-target__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.compress-target__label {
+  font-size: 0.85rem;
+}
+
+.compress-target__value {
+  width: 6rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.compress-target__unit {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.compress-target__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.compress-target__preset {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.compress-target__note {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.compress-target__error {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-error);
+}
+
+.compress-target__submit {
+  margin-top: 0.5rem;
+}
+
+.compress-target__submit:disabled,
+.compress-target__preset:disabled,
+.compress-target__value:disabled,
+.compress-target__unit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compress-panel__status {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.compress-panel__status--error {
+  color: var(--color-error);
+}
+
+.compress-panel__processing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.compress-result {
+  margin-top: 0.5rem;
+}
+
+.compress-result__summary {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.compress-result__stats {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.remove-exif-workbench__unsupported {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.remove-exif-panel {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.remove-exif-panel__start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.remove-exif-panel__status {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.remove-exif-panel__status--error {
+  color: var(--color-error);
+}
+
+.remove-exif-panel__processing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.remove-exif-result {
+  margin-top: 0.5rem;
+}
+
+.remove-exif-result__summary {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.remove-exif-result__notice {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.remove-exif-result__stats {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.png-to-webp-workbench__unsupported {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.png-to-webp-workbench__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.png-to-webp-panel {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.png-to-webp-panel__quality {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.png-to-webp-panel__quality-legend {
+  width: 100%;
+  font-size: 0.85rem;
+  padding: 0;
+  margin-bottom: 0.2rem;
+}
+
+.png-to-webp-panel__quality-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.png-to-webp-panel__quality-label {
+  font-weight: 600;
+}
+
+.png-to-webp-panel__quality-description {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.png-to-webp-panel__start {
+  margin-top: 0.5rem;
+}
+
+.png-to-webp-panel__start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.png-to-webp-panel__status {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.png-to-webp-panel__status--error {
+  color: var(--color-error);
+}
+
+.png-to-webp-panel__processing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.png-to-webp-result {
+  margin-top: 0.5rem;
+}
+
+.png-to-webp-result__summary {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.png-to-webp-result__stats {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.signature-resizer-workbench__unsupported {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.signature-resizer-workbench__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.signature-resizer-panel {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.signature-resizer-panel__field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.signature-resizer-panel__label {
+  font-size: 0.85rem;
+  min-width: 6.5rem;
+}
+
+.signature-resizer-panel__field input[type="number"] {
+  width: 6rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.signature-resizer-panel__unit {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.signature-resizer-panel__error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
+
+.signature-resizer-panel__fit-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.signature-resizer-panel__fit-mode legend {
+  font-size: 0.85rem;
+  padding: 0;
+  margin-bottom: 0.2rem;
+}
+
+.signature-resizer-panel__fit-mode-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.signature-resizer-panel__fit-mode-label {
+  font-weight: 600;
+}
+
+.signature-resizer-panel__fit-mode-description {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.signature-resizer-panel__start {
+  margin-top: 0.2rem;
+}
+
+.signature-resizer-panel__start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.signature-resizer-panel__status {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.signature-resizer-panel__status--error {
+  color: var(--color-error);
+}
+
+.signature-resizer-panel__processing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.signature-resizer-result {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.signature-resizer-result__summary {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.signature-resizer-result__summary--partial {
+  color: var(--color-error);
+}
+
+.signature-resizer-result__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.signature-resizer-checklist__heading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.signature-resizer-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.signature-resizer-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.signature-resizer-checklist__item--ok {
+  color: var(--color-fg);
+}
+
+.signature-resizer-checklist__item--fail {
+  color: var(--color-error);
+}
+
+.signature-resizer-checklist__badge {
+  font-weight: 700;
+}
+
+.signature-resizer-checklist__status {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.signature-resizer-result__stats {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.15rem;
+}
+
+/* モバイル向け調整。狭い画面幅では画像カードを横並びに固執させず、上段(サムネイル+削除)・
+   下段(詳細情報)の縦積みへ変更し、タップ領域を確保する */
+@media (max-width: 480px) {
+  .site-header {
+    padding-inline: var(--space-3);
+  }
+
+  .site-header__bar {
+    gap: var(--space-2);
+  }
+
+  .site-header__brand {
+    font-size: 1rem;
+  }
+
+  .site-nav {
+    position: static;
+    margin-left: 0;
+  }
+
+  .site-nav__menu {
+    position: static;
+  }
+
+  .site-nav__panel {
+    top: calc(100% + var(--space-3));
+    right: 0;
+    left: 0;
+    width: auto;
+    max-height: calc(100vh - 5.5rem);
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .site-nav__group {
+    padding: var(--space-2);
+  }
+
+  .site-nav__group + .site-nav__group {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+
+  .site-nav__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tool-cards__list {
+    grid-template-columns: 1fr;
+  }
+
+  .home-tool-group__list > .tool-card:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .home-analyze-cta {
+    gap: var(--space-2);
+  }
+
+  .home-analyze-cta > svg:first-child {
+    display: none;
+  }
+
+  .image-drop-zone {
+    padding: 1.25rem 1rem;
+  }
+
+  .image-list-item {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .image-list-item__thumbnail {
+    order: 1;
+  }
+
+  .image-list-item__remove {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .image-list-item__details {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .image-list-item__preview-trigger,
+  .image-list-item__save-trigger,
+  .image-list-item__share-trigger,
+  .image-list-item__download,
+  .image-list-item__remove,
+  .image-list__clear-all,
+  .site-nav__link,
+  .language-switcher__link {
+    min-height: var(--button-height);
+  }
+}
+
+.site-footer {
+  margin-top: var(--space-8);
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.site-footer__list {
+  list-style: none;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.site-footer__link {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.site-footer__link:hover {
+  color: var(--color-fg);
+}
+
+.site-footer__link[aria-current="page"] {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+
+.trust-effective-date {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.trust-section {
+  margin-top: 1.75rem;
+  max-width: 68ch;
+}
+
+.trust-section h2 {
+  font-size: 1.1rem;
+}
+
+.trust-section ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.trust-section li {
+  margin-bottom: 0.35rem;
+}
+
+.licenses-intro {
+  max-width: 60ch;
+}
+
+.license-note {
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.license-note p {
+  margin: 0.4rem 0;
+}
+
+.license-group {
+  margin-top: 2rem;
+}
+
+.license-entry {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.license-entry h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.license-entry dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.license-entry dt {
+  color: var(--color-muted);
+}
+
+.license-entry dd {
+  margin: 0;
+  word-break: break-word;
+}

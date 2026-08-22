@@ -1,0 +1,101 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import { ImageWorkbench } from "../ImageWorkbench";
+import RichParagraph from "../RichParagraph.astro";
+import FaqSection from "../FaqSection.astro";
+import PopularSizesLinks from "../PopularSizesLinks.astro";
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  ChartNoAxesColumnIncreasing,
+  FileSearch,
+  Trash2,
+} from "@lucide/astro";
+import { getToolCards } from "../../config/tool-page-config";
+import { getDictionary } from "../../i18n/get-dictionary";
+import { getPageContent } from "../../i18n/get-page-content";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+const toolCards = getToolCards(locale);
+const dictionary = getDictionary(locale);
+const content = getPageContent(locale).home;
+const groupedToolCards = content.purposeGroups.map((group) => ({
+  ...group,
+  cards: group.links.flatMap((link) => {
+    const card = toolCards.find((candidate) => candidate.key === link.page);
+    return card ? [card] : [];
+  }),
+}));
+---
+
+<ToolPageLayout locale={locale} pageKey="default" mainClass="home-page">
+  <RichParagraph locale={locale} segments={content.intro} class="lede" />
+  <section class="home-tool-groups" aria-labelledby="home-tool-groups-heading">
+    <h2 id="home-tool-groups-heading">{content.purposeHeading}</h2>
+    {
+      groupedToolCards.map((group, groupIndex) => (
+        <section class="home-tool-group" aria-labelledby={`home-tool-group-${groupIndex}`}>
+          <div class="home-tool-group__heading">
+            <span class="home-tool-group__icon" aria-hidden="true">
+              {groupIndex === 0 && <ArrowLeftRight size={20} stroke-width={1.8} />}
+              {groupIndex === 1 && (
+                <ChartNoAxesColumnIncreasing size={20} stroke-width={1.8} />
+              )}
+              {groupIndex === 2 && <Trash2 size={20} stroke-width={1.8} />}
+            </span>
+            <h3 id={`home-tool-group-${groupIndex}`}>{group.title}</h3>
+          </div>
+          <ul class="tool-cards__list home-tool-group__list">
+            {group.cards.map((card) => (
+              <li class="tool-card">
+                <a class="tool-card__link" href={card.href}>
+                  <span class="tool-card__title">{card.title}</span>
+                  <span class="tool-card__description">{card.description}</span>
+                  <span class="tool-card__formats">
+                    {dictionary.ui.common.formatsLabel}
+                    {card.formats}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </section>
+  <a class="home-analyze-cta" href="#image-analysis">
+    <FileSearch size={25} stroke-width={1.8} aria-hidden="true" />
+    <strong>{content.analyzePrompt}</strong>
+    <span>
+      {content.analyzeLinkLabel}
+      <ArrowRight size={18} stroke-width={1.8} aria-hidden="true" />
+    </span>
+  </a>
+  {
+    content.popularSizesLinks.length > 0 && (
+      <PopularSizesLinks
+        locale={locale}
+        heading={content.popularSizesHeading}
+        links={content.popularSizesLinks}
+        variant="inline"
+      />
+    )
+  }
+  <section class="tool-page-notes">
+    <h2>{content.limitationsHeading}</h2>
+    <ul>
+      {content.limitations.map((item) => <li>{item}</li>)}
+    </ul>
+  </section>
+  <section class="tool-page-notes home-analysis" id="image-analysis">
+    <h2>{content.analyzeHeading}</h2>
+    <p>{content.analyzeParagraph}</p>
+    <ImageWorkbench client:load locale={locale} />
+  </section>
+  <FaqSection heading={content.faqHeading} items={content.faq} />
+</ToolPageLayout>

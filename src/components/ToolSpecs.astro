@@ -1,0 +1,33 @@
+---
+import type { SpecItem } from "../i18n/page-content-types";
+
+interface Props {
+  heading: string;
+  items: SpecItem[];
+}
+
+const { heading, items } = Astro.props;
+---
+
+{
+  /*
+   * 仕様表。ドロップゾーン直下に置き、「サーバーに送らない」を検証可能な事実として示す。
+   * 未整備のツールはitemsが空配列で渡るため、セクションごと描画しない
+   * (technicalNote・popularSizesLinksと同じ扱い)。
+   */
+}
+{
+  items.length > 0 && (
+    <section class="tool-specs" aria-label={heading}>
+      <h2 class="tool-specs__heading">{heading}</h2>
+      <dl class="tool-specs__list">
+        {items.map((item) => (
+          <>
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </>
+        ))}
+      </dl>
+    </section>
+  )
+}

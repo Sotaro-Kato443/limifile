@@ -1,0 +1,23 @@
+---
+import { resolveUmamiPublicConfig } from "../config/umami";
+
+const config = resolveUmamiPublicConfig(
+  import.meta.env.PUBLIC_UMAMI_WEBSITE_ID,
+  import.meta.env.PUBLIC_UMAMI_SCRIPT_URL,
+);
+---
+
+{
+  config && (
+    <script
+      is:inline
+      defer
+      src={config.scriptUrl}
+      data-website-id={config.websiteId}
+      data-auto-pageview="false"
+      data-exclude-search="true"
+      data-exclude-hash="true"
+      data-do-not-track="true"
+    />
+  )
+}

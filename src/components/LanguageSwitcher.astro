@@ -1,0 +1,48 @@
+---
+import { getDictionary } from "../i18n/get-dictionary";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+import { ACTIVE_LOCALES } from "../i18n/locales";
+import {
+  buildLocalizedPagePath,
+  getLocalesForPage,
+  type PublicPageKey,
+} from "../config/public-pages";
+
+interface Props {
+  /** このページの現在ロケール */
+  locale: ImplementedLocaleKey;
+  /** 現在ページと同じ機能を指すkey。licensesも含め、実在する公開ページのみで使う */
+  pageKey: PublicPageKey;
+}
+
+const { locale, pageKey } = Astro.props;
+const dictionary = getDictionary(locale);
+// このページが実在するlocaleだけへリンクする(404になるlocaleへは絶対にリンクしない)。
+// EnOnlyPublicPageKeyのように翻訳が1つしか無いページでは、切替先が無いため<nav>自体を出さない。
+const availableLocales = new Set(getLocalesForPage(pageKey));
+const switchableLocales = ACTIVE_LOCALES.filter((definition) =>
+  availableLocales.has(definition.key),
+);
+---
+
+{
+  switchableLocales.length > 1 && (
+    <nav class="language-switcher" aria-label={dictionary.languageSwitcher.label}>
+      <ul class="language-switcher__list">
+        {switchableLocales.map((definition) => (
+          <li>
+            <a
+              class="language-switcher__link"
+              href={buildLocalizedPagePath(definition.key, pageKey)}
+              lang={definition.htmlLang}
+              hreflang={definition.hreflang}
+              aria-current={definition.key === locale ? "page" : undefined}
+            >
+              {definition.displayName}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

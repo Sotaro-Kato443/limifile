@@ -1,0 +1,34 @@
+---
+import { buildLocalizedPagePath } from "../config/public-pages";
+import type { ContentSegment } from "../i18n/page-content-types";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  segments: ContentSegment[];
+  /** <p>へ付与する追加class(例: 導入文をledeとして強調表示する場合)。省略時は付与しない */
+  class?: string;
+}
+
+const { locale, segments, class: className } = Astro.props;
+
+/** ページ内リンクセグメントのhrefを、locale別の公開URL(末尾スラッシュ込み)+anchorで組み立てる */
+function pageLinkHref(segment: Extract<ContentSegment, { type: "pageLink" }>): string {
+  const base = buildLocalizedPagePath(locale, segment.page);
+  return segment.anchor ? `${base}#${segment.anchor}` : base;
+}
+---
+
+<p class={className}>
+  {
+    segments.map((segment) => {
+      if (segment.type === "text") {
+        return segment.text;
+      }
+      if (segment.type === "pageLink") {
+        return <a href={pageLinkHref(segment)}>{segment.label}</a>;
+      }
+      return <a href={segment.href}>{segment.label}</a>;
+    })
+  }
+</p>

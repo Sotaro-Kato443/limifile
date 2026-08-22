@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteFooter from "../SiteFooter.astro";
+import LanguageSwitcher from "../LanguageSwitcher.astro";
+import BrandLogo from "../BrandLogo.astro";
+import { BRAND_NAME } from "../../config/brand";
+import { getDictionary } from "../../i18n/get-dictionary";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+import { buildLocalizedPagePath } from "../../config/public-pages";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+const dictionary = getDictionary(locale);
+const pageTitle = `${dictionary.notFound.heading} | ${BRAND_NAME}`;
+const homeHref = buildLocalizedPagePath(locale, "default");
+---
+
+<BaseLayout
+  locale={locale}
+  title={pageTitle}
+  description={dictionary.notFound.metaDescription}
+  indexable={false}
+>
+  <header class="site-header">
+    <div class="site-header__bar">
+      <a class="site-header__brand" href={homeHref}><BrandLogo /></a>
+    </div>
+  </header>
+  <main>
+    <h1>{dictionary.notFound.heading}</h1>
+    <p class="lede">
+      {dictionary.notFound.lede}
+    </p>
+    <p>
+      <a class="btn-primary" href={homeHref}>{dictionary.backToHome}</a>
+    </p>
+    {
+      /*
+        未知パスの英語⇔日本語相互変換は行わず(存在するとは限らないため)、
+        常に英語ホーム・日本語ホームへの明示リンクのみを表示する。
+      */
+    }
+    <LanguageSwitcher locale={locale} pageKey="default" />
+  </main>
+  <SiteFooter locale={locale} />
+</BaseLayout>

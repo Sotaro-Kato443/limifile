@@ -1,0 +1,37 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# Claude Code local-only settings
+.claude/settings.local.json
+
+# ローカル限定のテスト素材(個人データ等、リポジトリへ含めない)
+.local-test-assets/
+
+# scripts/build-lgpl-heic-source-package.mjs の入力archiveキャッシュ
+# (再ダウンロード回避用。SHA-256検証済みのpinned upstream archiveのみ格納)
+.lgpl-heic-package-cache/
+
+# ローカル限定の監査・証跡バックアップ(LGPL rebuild proof等。リポジトリへ含めない)
+.local-backups/

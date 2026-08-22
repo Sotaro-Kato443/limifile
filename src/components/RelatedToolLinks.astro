@@ -1,0 +1,26 @@
+---
+import { buildLocalizedPagePath } from "../config/public-pages";
+import type { RelatedLink } from "../i18n/page-content-types";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  heading: string;
+  links: RelatedLink[];
+}
+
+const { locale, heading, links } = Astro.props;
+---
+
+<section class="tool-page-related">
+  <h2>{heading}</h2>
+  <ul class="related-links">
+    {
+      links.map((link) => (
+        <li>
+          <a href={buildLocalizedPagePath(locale, link.page)}>{link.label}</a>
+        </li>
+      ))
+    }
+  </ul>
+</section>

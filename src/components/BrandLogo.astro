@@ -1,0 +1,60 @@
+---
+interface Props {
+  class?: string;
+}
+
+const className = Astro.props.class;
+---
+
+<span class:list={["brand-logo", className]}>
+  <img
+    class="brand-logo__mark"
+    src="/brand/limifile-mark.svg"
+    width="36"
+    height="36"
+    alt=""
+    aria-hidden="true"
+  />
+  <img
+    class="brand-logo__wordmark"
+    src="/brand/limifile-wordmark.svg"
+    width="800"
+    height="197"
+    alt=""
+    aria-hidden="true"
+  />
+  <span class="brand-logo__accessible-name">LimiFile</span>
+</span>
+
+<style>
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    white-space: nowrap;
+  }
+
+  .brand-logo__mark {
+    width: 1.85em;
+    height: 1.85em;
+    flex: none;
+  }
+
+  .brand-logo__wordmark {
+    width: auto;
+    height: 1.18em;
+    flex: none;
+  }
+
+  .brand-logo__accessible-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

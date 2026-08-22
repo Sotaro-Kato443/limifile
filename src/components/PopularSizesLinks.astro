@@ -1,0 +1,54 @@
+---
+import { buildLocalizedPagePath } from "../config/public-pages";
+import type { RelatedLink } from "../i18n/page-content-types";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+/**
+ * 固定容量ページ(20/50/100/200/500KB)同士・/compress-imageからの「人気の容量」導線。
+ * RelatedToolLinksと見た目は共有する(class="tool-page-related"を併用)が、
+ * scripts/verify-tool-seo-content.mjs等が関連ツールセクション(2〜4件制約)と
+ * 取り違えないよう、tool-page-popular-sizesという別クラスで区別する。
+ * このコメントはfrontmatter内(HTML出力に含まれない)に置く — テンプレート側の<!-- -->は
+ * Astroのbuild出力にそのまま残り、日本語文言が英語ページのHTMLへ漏れて言語混在チェックを
+ * 誤検知させるため使わない。
+ */
+/**
+ * variant:
+ * - "default": ツールページ下部で使う縦リスト表示(既存6ページの見た目を変えない)
+ * - "inline":  トップページ用のコンパクト表示。ツールカード直下に置く「小さな導線」であり、
+ *              縦5行だと独立した大きなセクションに見えてしまうため、区切り中黒で1行に流す。
+ *              リンクテキストは短縮せず意味のある文言のままにする(内部リンクのanchor textは
+ *              リンク先ページの評価に効くため、"20KB"より"Compress to 20KB"を優先する)。
+ *              狭い画面では無理に1行へ収めず自然に折り返す。
+ */
+type PopularSizesVariant = "default" | "inline";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  heading: string;
+  links: RelatedLink[];
+  variant?: PopularSizesVariant;
+}
+
+const { locale, heading, links, variant = "default" } = Astro.props;
+const isInline = variant === "inline";
+---
+
+<section
+  class:list={[
+    "tool-page-related",
+    "tool-page-popular-sizes",
+    isInline && "tool-page-popular-sizes--inline",
+  ]}
+>
+  <h2>{heading}</h2>
+  <ul class:list={[isInline ? "popular-sizes-inline" : "related-links"]}>
+    {
+      links.map((link) => (
+        <li>
+          <a href={buildLocalizedPagePath(locale, link.page)}>{link.label}</a>
+        </li>
+      ))
+    }
+  </ul>
+</section>

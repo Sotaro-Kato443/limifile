@@ -1,0 +1,69 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import { FixedTargetCompressionWorkbench } from "../FixedTargetCompressionWorkbench";
+import RichParagraph from "../RichParagraph.astro";
+import FaqSection from "../FaqSection.astro";
+import RelatedToolLinks from "../RelatedToolLinks.astro";
+import PopularSizesLinks from "../PopularSizesLinks.astro";
+import { getToolPageAbout } from "../../i18n/get-page-content";
+import { toCompressionTarget } from "../image-intake/compression-target";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+/** このpage componentが受け持つ固定容量ページのkey(20/50/100/200/500KB) */
+export type FixedTargetPageKey =
+  | "compress-image-to-20kb"
+  | "compress-image-to-50kb"
+  | "compress-image-to-100kb"
+  | "compress-image-to-200kb"
+  | "compress-image-to-500kb";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  pageKey: FixedTargetPageKey;
+  /** 目標容量(KB単位の数値。例: 20・50・100・200・500)。ここからCompressionTargetを組み立てる */
+  targetKB: number;
+}
+
+const { locale, pageKey, targetKB } = Astro.props;
+const about = getToolPageAbout(locale, pageKey);
+const target = toCompressionTarget(targetKB, "KB");
+---
+
+<ToolPageLayout locale={locale} pageKey={pageKey}>
+  <RichParagraph locale={locale} segments={about.intro} class="lede" />
+  <FixedTargetCompressionWorkbench client:load locale={locale} target={target} />
+  <section class="tool-page-notes">
+    <h2>{about.featuresHeading}</h2>
+    <ul>
+      {about.features.map((feature) => <li>{feature}</li>)}
+    </ul>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.howToHeading}</h2>
+    <ol>
+      {about.howToSteps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.limitationsHeading}</h2>
+    <ul>
+      {about.limitations.map((limitation) => <li>{limitation}</li>)}
+    </ul>
+    {about.technicalNote.map((paragraph) => <RichParagraph locale={locale} segments={paragraph} />)}
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.privacyHeading}</h2>
+    <p>{about.privacyNote}</p>
+  </section>
+  <FaqSection heading={about.faqHeading} items={about.faq} />
+  {
+    about.popularSizesLinks.length > 0 && (
+      <PopularSizesLinks
+        locale={locale}
+        heading={about.popularSizesHeading}
+        links={about.popularSizesLinks}
+      />
+    )
+  }
+  <RelatedToolLinks locale={locale} heading={about.relatedHeading} links={about.relatedLinks} />
+</ToolPageLayout>

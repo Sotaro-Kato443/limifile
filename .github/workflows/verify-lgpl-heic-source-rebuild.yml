@@ -1,0 +1,434 @@
+name: "Verify LGPL HEIC Source Package Rebuild"
+
+# End-to-end verification that PR #13's HEIC source/relink package
+# (public/source/filefit-heic-decoder-1.0.0-source.tar.gz), used as the ONLY
+# source input, can rebuild FileFit's Production HEIC decoder WASM
+# byte-for-byte, and can be relinked against a source-modified libheif. This
+# does NOT assert LGPL compliance and does NOT deploy anywhere.
+#
+# Two network phases, kept deliberately separate (see the "prep" vs
+# "source build" steps below): pulling the pinned Docker image and installing
+# OS build dependencies needs network access; the actual source build step
+# (jsquash/ + upstream/ already inside the package) runs with
+# `docker run --network=none` and never fetches jSquash, libheif, or libde265
+# again. This is NOT a claim of a fully air-gapped build environment overall
+# -- see BUILD.md in the package for the precise wording.
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-lgpl-heic-source-rebuild-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE_PATH: public/source/filefit-heic-decoder-1.0.0-source.tar.gz
+  PACKAGE_SHA256: d1f94bf158223da690c18196f4858506cb9e79f4ba30e22a2b7fee226652cfd8
+  PACKAGE_SIZE: "2530244"
+  PROD_WASM_SHA256: 832bfb37148038257e56216d165cfae24a8afaa7cae8fc0ddb1ef4bf495612a9
+  PROD_JS_SHA256: 646f18a658f6e0899c9620473ab556b2503dc1e39cbd36fe9dc30d43e0fdf6cc
+  DOCKER_IMAGE_TAG: emscripten/emsdk:3.1.57
+  DOCKER_IMAGE_DIGEST: sha256:8b7c9e9e95f3fb92b94876727a35235a8d2908c4d7e2ef2427f78366fd0b1130
+  MARKER_STRING: filefit-candidate-package-relink-marker
+
+jobs:
+  verify-package:
+    name: Verify source package (pre-build checks, no Docker)
+    # fork PRからは実行しない。この条件が無いと、fork側が同名branchを作るだけで
+    # 最大90分のDocker buildを起動できてしまう(secretは使っていないが、計算資源は消費される)。
+    # workflow_dispatchはこのrepositoryへの権限が前提なので対象外。
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'compliance/lgpl-heic-source-package')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run existing lightweight package verification
+        run: npm run verify:lgpl-heic-source-package
+
+      - name: Exact size/SHA-256 match against this workflow's pinned expectations
+        run: |
+          set -euo pipefail
+          actual_size=$(stat -c%s "$PACKAGE_PATH" 2>/dev/null || stat -f%z "$PACKAGE_PATH")
+          actual_sha256=$(sha256sum "$PACKAGE_PATH" | cut -d' ' -f1)
+          fail=0
+          if [ "$actual_size" != "$PACKAGE_SIZE" ]; then
+            echo "[FAIL] package size: expected $PACKAGE_SIZE, actual $actual_size"
+            fail=1
+          else
+            echo "[OK] package size: $actual_size"
+          fi
+          if [ "$actual_sha256" != "$PACKAGE_SHA256" ]; then
+            echo "[FAIL] package SHA-256: expected $PACKAGE_SHA256, actual $actual_sha256"
+            fail=1
+          else
+            echo "[OK] package SHA-256: $actual_sha256"
+          fi
+          if [ "$fail" = "1" ]; then
+            echo "Package changed since this workflow's env values were pinned -- update PACKAGE_SHA256/PACKAGE_SIZE in this workflow file if the change was intentional."
+            exit 1
+          fi
+
+  rebuild-from-package:
+    name: Rebuild WASM from the source package only (network-isolated source build)
+    needs: verify-package
+    # fork PRからは実行しない。この条件が無いと、fork側が同名branchを作るだけで
+    # 最大90分のDocker buildを起動できてしまう(secretは使っていないが、計算資源は消費される)。
+    # workflow_dispatchはこのrepositoryへの権限が前提なので対象外。
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'compliance/lgpl-heic-source-package')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      # ---- Preparation phase: network access allowed ----
+
+      - name: "Prep: pull pinned Docker image by digest and record its identity"
+        run: |
+          set -euo pipefail
+          IMAGE_REF="${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST}"
+          echo "IMAGE_REF=$IMAGE_REF" >> "$GITHUB_ENV"
+          docker pull "$IMAGE_REF"
+          mkdir -p /tmp/logs
+          {
+            echo "requested tag: $DOCKER_IMAGE_TAG"
+            echo "requested digest: $DOCKER_IMAGE_DIGEST"
+            echo "--- docker inspect ---"
+            docker inspect "$IMAGE_REF"
+          } > /tmp/logs/docker-image-info.json
+          echo "resolved RepoDigests:"
+          docker inspect "$IMAGE_REF" --format '{{json .RepoDigests}}' | tee /tmp/logs/resolved-repo-digests.json
+          echo "image ID:"
+          docker inspect "$IMAGE_REF" --format '{{.Id}}' | tee /tmp/logs/image-id.txt
+          echo "platform/architecture:"
+          docker inspect "$IMAGE_REF" --format 'os={{.Os}} arch={{.Architecture}} variant={{.Variant}}' | tee /tmp/logs/platform.txt
+
+      - name: "Prep: record toolchain versions from the pinned image"
+        run: |
+          docker run --rm "$IMAGE_REF" bash -lc 'emcc --version; echo ---; em++ --version; echo ---; cmake --version' \
+            | tee /tmp/logs/toolchain-versions.txt
+
+      - name: "Prep: build a temporary verification image with build dependencies baked in"
+        run: |
+          set -euo pipefail
+          cat > /tmp/verify.Dockerfile <<EOF
+          FROM ${IMAGE_REF}
+          RUN apt-get update -qq && apt-get install -qqy autoconf libtool pkg-config
+          EOF
+          docker build -t filefit-heic-candidate-verify:local -f /tmp/verify.Dockerfile /tmp
+          docker inspect filefit-heic-candidate-verify:local --format '{{.Id}}' | tee /tmp/logs/verification-image-id.txt
+          echo "This image is a local, temporary verification image only -- never pushed anywhere." >> /tmp/logs/verification-image-id.txt
+
+      - name: "Prep: extract the candidate package into three independent working copies"
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pkg-baseline /tmp/pkg-modified-libheif /tmp/pkg-modified-libde265
+          tar xzf "$PACKAGE_PATH" -C /tmp/pkg-baseline
+          tar xzf "$PACKAGE_PATH" -C /tmp/pkg-modified-libheif
+          tar xzf "$PACKAGE_PATH" -C /tmp/pkg-modified-libde265
+          ls /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source
+          test -x /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source/rebuild.sh
+
+      # ---- Source build phase: network disabled (--network=none) ----
+      # From this point on, every docker run against filefit-heic-candidate-verify:local
+      # uses --network=none. rebuild.sh reads only jsquash/ (already an extracted
+      # source tree) and upstream/*.tar.gz (already inside the package) -- it never
+      # fetches jSquash, libheif, or libde265 again, and this repository's own
+      # node_modules/@discourse/heic or any other upstream source copy is never
+      # mounted into these containers.
+
+      - name: "Source build (network=none): baseline"
+        id: baseline_build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          time docker run --rm --network=none \
+            -v /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source:/work \
+            -w /work \
+            filefit-heic-candidate-verify:local \
+            ./rebuild.sh baseline 2>&1 | tee /tmp/logs/baseline-build.log
+
+      - name: "Source build (network=none): modified-libheif (marker patch)"
+        id: modified_libheif_build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          time docker run --rm --network=none \
+            -v /tmp/pkg-modified-libheif/filefit-heic-decoder-1.0.0-source:/work \
+            -w /work \
+            filefit-heic-candidate-verify:local \
+            ./rebuild.sh modified-libheif --marker "${MARKER_STRING}" \
+            2>&1 | tee /tmp/logs/modified-libheif-build.log
+
+      - name: "Source build (network=none): modified-libde265 (marker patch)"
+        id: modified_libde265_build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          time docker run --rm --network=none \
+            -v /tmp/pkg-modified-libde265/filefit-heic-decoder-1.0.0-source:/work \
+            -w /work \
+            filefit-heic-candidate-verify:local \
+            ./rebuild.sh modified-libde265 --marker "${MARKER_STRING}" \
+            2>&1 | tee /tmp/logs/modified-libde265-build.log
+
+      - name: Copy build outputs for later steps
+        if: always()
+        run: |
+          mkdir -p /tmp/out/baseline /tmp/out/modified-libheif /tmp/out/modified-libde265
+          cp /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source/out/baseline/heic_dec.wasm /tmp/out/baseline/ 2>/dev/null || echo "no baseline wasm (build failed)"
+          cp /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source/out/baseline/heic_dec.js /tmp/out/baseline/ 2>/dev/null || echo "no baseline js (build failed)"
+          cp /tmp/pkg-baseline/filefit-heic-decoder-1.0.0-source/out/baseline/package.json /tmp/out/baseline/ 2>/dev/null || true
+          cp /tmp/pkg-modified-libheif/filefit-heic-decoder-1.0.0-source/out/modified-libheif/heic_dec.wasm /tmp/out/modified-libheif/ 2>/dev/null || echo "no modified-libheif wasm (build failed)"
+          cp /tmp/pkg-modified-libheif/filefit-heic-decoder-1.0.0-source/out/modified-libheif/heic_dec.js /tmp/out/modified-libheif/ 2>/dev/null || echo "no modified-libheif js (build failed)"
+          cp /tmp/pkg-modified-libheif/filefit-heic-decoder-1.0.0-source/out/modified-libheif/package.json /tmp/out/modified-libheif/ 2>/dev/null || true
+          cp /tmp/pkg-modified-libde265/filefit-heic-decoder-1.0.0-source/out/modified-libde265/heic_dec.wasm /tmp/out/modified-libde265/ 2>/dev/null || echo "no modified-libde265 wasm (build failed)"
+          cp /tmp/pkg-modified-libde265/filefit-heic-decoder-1.0.0-source/out/modified-libde265/heic_dec.js /tmp/out/modified-libde265/ 2>/dev/null || echo "no modified-libde265 js (build failed)"
+          cp /tmp/pkg-modified-libde265/filefit-heic-decoder-1.0.0-source/out/modified-libde265/package.json /tmp/out/modified-libde265/ 2>/dev/null || true
+          ls -laR /tmp/out
+
+      - name: Marker check (strings on the modified WASMs)
+        if: always()
+        run: |
+          for variant in modified-libheif modified-libde265; do
+            if [ -f "/tmp/out/$variant/heic_dec.wasm" ]; then
+              strings -n 6 "/tmp/out/$variant/heic_dec.wasm" | grep -i "${MARKER_STRING}" | tee "/tmp/logs/marker-check-$variant.log" \
+                || echo "MARKER NOT FOUND (unexpected)" | tee "/tmp/logs/marker-check-$variant.log"
+            else
+              echo "no $variant wasm to check" | tee "/tmp/logs/marker-check-$variant.log"
+            fi
+          done
+
+      - name: Import/export inspection for each variant
+        if: always()
+        run: |
+          mkdir -p /tmp/logs/inspect
+          for variant in baseline modified-libheif modified-libde265; do
+            if [ -f "/tmp/out/$variant/heic_dec.wasm" ]; then
+              node .github/workflows/verify-lgpl-heic-source-rebuild/wasm-inspect.mjs "/tmp/out/$variant/heic_dec.wasm" \
+                > "/tmp/logs/inspect/$variant.json" || true
+            fi
+          done
+          cat /tmp/logs/inspect/*.json 2>/dev/null || echo "no inspect output"
+
+      - name: "Smoke test: module instantiation + embind decode() callable + invalid-input rejection (NOT a real HEIC decode test)"
+        if: always()
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/logs/smoke
+          for variant in baseline modified-libheif modified-libde265; do
+            if [ -f "/tmp/out/$variant/heic_dec.js" ] && [ -f "/tmp/out/$variant/heic_dec.wasm" ]; then
+              echo "=== $variant ===" | tee -a /tmp/logs/smoke/decode-smoke-test.log
+              if node .github/workflows/verify-lgpl-heic-source-rebuild/decode-smoke-test.mjs "/tmp/out/$variant/heic_dec.js" \
+                   2>&1 | tee -a /tmp/logs/smoke/decode-smoke-test.log; then
+                echo "PASS" > "/tmp/logs/smoke/$variant.status"
+              else
+                echo "FAIL" > "/tmp/logs/smoke/$variant.status"
+              fi
+            else
+              echo "=== $variant: SKIPPED (no build output) ===" | tee -a /tmp/logs/smoke/decode-smoke-test.log
+              echo "FAIL" > "/tmp/logs/smoke/$variant.status"
+            fi
+          done
+
+      # ---- Network access allowed again: fetch real Production npm package for comparison ----
+
+      - name: Fetch Production npm package (@discourse/heic@1.0.0) for byte comparison
+        run: |
+          mkdir -p /tmp/npm-prod
+          cd /tmp/npm-prod
+          npm pack @discourse/heic@1.0.0
+          tar xzf discourse-heic-1.0.0.tgz
+          sha256sum package/codec/dec/heic_dec.wasm package/codec/dec/heic_dec.js
+
+      - name: Compare baseline rebuild vs Production
+        run: |
+          PROD_WASM=/tmp/npm-prod/package/codec/dec/heic_dec.wasm
+          PROD_JS=/tmp/npm-prod/package/codec/dec/heic_dec.js
+          BASE_WASM=/tmp/out/baseline/heic_dec.wasm
+          BASE_JS=/tmp/out/baseline/heic_dec.js
+          if [ -f "$BASE_WASM" ]; then
+            sha256sum "$BASE_WASM"
+            if cmp -s "$PROD_WASM" "$BASE_WASM"; then
+              echo "RESULT: baseline WASM is BYTE-IDENTICAL to Production npm WASM"
+            else
+              echo "RESULT: baseline WASM DIFFERS from Production npm WASM"
+            fi
+          else
+            echo "RESULT: baseline WASM missing"
+          fi
+          if [ -f "$BASE_JS" ]; then
+            sha256sum "$BASE_JS"
+            if cmp -s "$PROD_JS" "$BASE_JS"; then
+              echo "RESULT: baseline JS is BYTE-IDENTICAL to Production npm JS"
+            else
+              echo "RESULT: baseline JS DIFFERS from Production npm JS"
+            fi
+          else
+            echo "RESULT: baseline JS missing"
+          fi
+
+      - name: "WASM-only swap feasibility check (JS glue diff: baseline vs each modified variant)"
+        run: |
+          BASE_JS=/tmp/out/baseline/heic_dec.js
+          for variant in modified-libheif modified-libde265; do
+            MOD_JS="/tmp/out/$variant/heic_dec.js"
+            if [ -f "$BASE_JS" ] && [ -f "$MOD_JS" ]; then
+              if cmp -s "$BASE_JS" "$MOD_JS"; then
+                echo "RESULT ($variant): JS glue is BYTE-IDENTICAL between baseline and $variant builds."
+              else
+                echo "RESULT ($variant): JS glue DIFFERS between baseline and $variant builds."
+                diff -u "$BASE_JS" "$MOD_JS" | head -100
+              fi
+            else
+              echo "RESULT ($variant): one or both JS glue files are missing, comparison NOT performed"
+            fi
+          done
+
+      - name: Assemble filefit-heic-candidate-package-rebuild-proof artifact
+        if: always()
+        run: |
+          mkdir -p /tmp/proof/rebuild-outputs /tmp/proof/logs
+          cp -r /tmp/out/* /tmp/proof/rebuild-outputs/ 2>/dev/null || true
+          cp -r /tmp/logs/* /tmp/proof/logs/ 2>/dev/null || true
+          cp /tmp/npm-prod/package/codec/dec/heic_dec.wasm /tmp/proof/rebuild-outputs/production-npm-heic_dec.wasm 2>/dev/null || true
+          cp /tmp/npm-prod/package/codec/dec/heic_dec.js /tmp/proof/rebuild-outputs/production-npm-heic_dec.js 2>/dev/null || true
+          cp "$PACKAGE_PATH" /tmp/proof/candidate-package.tar.gz 2>/dev/null || true
+          cat > /tmp/proof/README.md <<'EOF'
+          # FileFit HEIC source package rebuild proof (technical verification artifact)
+
+          This is a technical verification artifact, temporarily retained (see this
+          upload's retention-days). It is NOT the official Corresponding Source
+          deliverable and does NOT by itself demonstrate LGPL legal compliance.
+
+          It documents an attempt to rebuild FileFit's HEIC decoder WASM using ONLY
+          the source package from PR #13
+          (public/source/filefit-heic-decoder-1.0.0-source.tar.gz) as input, inside a
+          Docker container run with `--network=none` for the actual source-build step
+          (jSquash/libheif/libde265 were not re-fetched from GitHub during that step).
+          Three variants were built: baseline (unmodified), modified-libheif (marker
+          patch to libheif's version string), and modified-libde265 (marker patch to
+          libde265's version string).
+
+          What this does NOT prove: pixel-accurate decoding of a real HEIC photo. No
+          HEIC fixture with a clear redistribution license was available. The smoke
+          test referenced in these logs only covers module instantiation, embind
+          binding callability, and invalid-input rejection -- never real decode
+          correctness.
+
+          See logs/ for full build output, dependency/toolchain versions, Docker image
+          identity, and the network-boundary description. See rebuild-outputs/ for the
+          baseline, modified-libheif, and modified-libde265 WASM/JS pairs plus a copy
+          of the real Production npm package for comparison.
+          EOF
+          find /tmp/proof -type f | sort
+
+      - name: Upload filefit-heic-candidate-package-rebuild-proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filefit-heic-candidate-package-rebuild-proof
+          path: /tmp/proof
+          retention-days: 30
+
+      - name: "Strict verdict (fails the job if any required proof is missing — no false-green)"
+        if: always()
+        env:
+          BASELINE_OUTCOME: ${{ steps.baseline_build.outcome }}
+          MODIFIED_LIBHEIF_OUTCOME: ${{ steps.modified_libheif_build.outcome }}
+          MODIFIED_LIBDE265_OUTCOME: ${{ steps.modified_libde265_build.outcome }}
+        run: |
+          set +e
+          fail=0
+          check() {
+            if [ "$2" = "0" ]; then echo "[OK]   $1"; else echo "[FAIL] $1"; fail=1; fi
+          }
+
+          [ "$BASELINE_OUTCOME" = "success" ]; check "baseline source build (network=none) succeeded" $?
+          [ "$MODIFIED_LIBHEIF_OUTCOME" = "success" ]; check "modified-libheif source build (network=none) succeeded" $?
+          [ "$MODIFIED_LIBDE265_OUTCOME" = "success" ]; check "modified-libde265 source build (network=none) succeeded" $?
+
+          [ -s /tmp/out/baseline/heic_dec.wasm ]; check "baseline heic_dec.wasm exists and is non-empty" $?
+          [ -s /tmp/out/baseline/heic_dec.js ]; check "baseline heic_dec.js exists and is non-empty" $?
+
+          BASE_WASM_SHA=$(sha256sum /tmp/out/baseline/heic_dec.wasm 2>/dev/null | cut -d' ' -f1)
+          BASE_JS_SHA=$(sha256sum /tmp/out/baseline/heic_dec.js 2>/dev/null | cut -d' ' -f1)
+          [ "$BASE_WASM_SHA" = "$PROD_WASM_SHA256" ]; check "baseline WASM SHA-256 matches Production ($PROD_WASM_SHA256)" $?
+          [ "$BASE_JS_SHA" = "$PROD_JS_SHA256" ]; check "baseline JS SHA-256 matches Production ($PROD_JS_SHA256)" $?
+
+          BASE_IMPORTS=$(node -e 'try{console.log(JSON.parse(require("fs").readFileSync("/tmp/logs/inspect/baseline.json","utf8")).importCount)}catch{console.log("")}')
+          BASE_EXPORTS=$(node -e 'try{console.log(JSON.parse(require("fs").readFileSync("/tmp/logs/inspect/baseline.json","utf8")).exportCount)}catch{console.log("")}')
+          [ "$BASE_IMPORTS" = "41" ]; check "baseline import count == 41 (actual: $BASE_IMPORTS)" $?
+          [ "$BASE_EXPORTS" = "16" ]; check "baseline export count == 16 (actual: $BASE_EXPORTS)" $?
+
+          for variant in modified-libheif modified-libde265; do
+            [ -s "/tmp/out/$variant/heic_dec.wasm" ]; check "$variant heic_dec.wasm exists and is non-empty" $?
+            [ -s "/tmp/out/$variant/heic_dec.js" ]; check "$variant heic_dec.js exists and is non-empty" $?
+            grep -qi "${MARKER_STRING}" "/tmp/logs/marker-check-$variant.log" 2>/dev/null
+            check "$variant WASM contains the version marker string" $?
+
+            VARIANT_WASM_SHA=$(sha256sum "/tmp/out/$variant/heic_dec.wasm" 2>/dev/null | cut -d' ' -f1)
+            [ -n "$VARIANT_WASM_SHA" ] && [ "$VARIANT_WASM_SHA" != "$BASE_WASM_SHA" ]
+            check "$variant WASM SHA-256 differs from baseline (library modification took effect)" $?
+
+            VAR_IMPORTS=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('/tmp/logs/inspect/$variant.json','utf8')).importCount)}catch{console.log('')}")
+            VAR_EXPORTS=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('/tmp/logs/inspect/$variant.json','utf8')).exportCount)}catch{console.log('')}")
+            [ "$VAR_IMPORTS" = "$BASE_IMPORTS" ] && [ -n "$VAR_IMPORTS" ]
+            check "$variant import count matches baseline ($VAR_IMPORTS vs $BASE_IMPORTS)" $?
+            [ "$VAR_EXPORTS" = "$BASE_EXPORTS" ] && [ -n "$VAR_EXPORTS" ]
+            check "$variant export count matches baseline ($VAR_EXPORTS vs $BASE_EXPORTS)" $?
+
+            cmp -s /tmp/out/baseline/heic_dec.js "/tmp/out/$variant/heic_dec.js" 2>/dev/null
+            check "baseline and $variant JS glue are byte-identical" $?
+          done
+
+          for variant in baseline modified-libheif modified-libde265; do
+            [ -f "/tmp/logs/smoke/$variant.status" ] && [ "$(cat "/tmp/logs/smoke/$variant.status")" = "PASS" ]
+            check "$variant: module instantiation + embind decode() callable + invalid-input rejected" $?
+          done
+
+          [ -f /tmp/proof/README.md ]; check "proof artifact README.md exists" $?
+          [ -d /tmp/proof/rebuild-outputs ] && [ "$(ls -A /tmp/proof/rebuild-outputs 2>/dev/null)" ]; check "proof artifact rebuild-outputs/ is non-empty" $?
+
+          echo ""
+          if [ "$fail" = "1" ]; then
+            echo "VERDICT: FAIL — one or more required proofs above are missing."
+            echo "This is a strict pass/fail check: byte-mismatch against Production is treated as a"
+            echo "failure here (unlike PR #12's exploratory spike), because this workflow's purpose is"
+            echo "specifically to confirm the source package reproduces Production, not to explore"
+            echo "toolchain variance."
+            exit 1
+          fi
+          echo "VERDICT: PASS — source package rebuilds Production byte-for-byte, and relinks against both a modified libheif and a modified libde265, using only its own contents with the source-build step network-isolated."

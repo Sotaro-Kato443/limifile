@@ -1,0 +1,23 @@
+---
+import InfoPageLayout from "../../layouts/InfoPageLayout.astro";
+import TrustSections from "../TrustSections.astro";
+import { getTrustPageContent } from "../../i18n/get-trust-content";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+const content = getTrustPageContent(locale, "contact");
+---
+
+<InfoPageLayout
+  locale={locale}
+  pageKey="contact"
+  title={content.title}
+  description={content.description}
+>
+  <h1>{content.heading}</h1>
+  <TrustSections locale={locale} sections={content.sections} />
+</InfoPageLayout>

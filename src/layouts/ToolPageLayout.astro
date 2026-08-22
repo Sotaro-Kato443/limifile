@@ -1,0 +1,98 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import LanguageSwitcher from "../components/LanguageSwitcher.astro";
+import BrandLogo from "../components/BrandLogo.astro";
+import UmamiAnalytics from "../components/UmamiAnalytics.astro";
+import { BRAND_NAME } from "../config/brand";
+import { getToolDefinition } from "../config/tool-page-config";
+import type { ToolPageKey } from "../config/tool-page-config";
+import {
+  buildLocalizedPagePath,
+  buildPageAlternateUrls,
+  buildXDefaultUrl,
+  resolvePublicPageKeyStrict,
+} from "../config/public-pages";
+import { isGlobalIndexingEnabled, resolveIsIndexable } from "../config/site-indexing";
+import { getToolContent } from "../i18n/get-tool-content";
+import { stripLocalePrefix } from "../i18n/urls";
+import type { ImplementedLocaleKey } from "../i18n/get-dictionary";
+
+interface Props {
+  /** このページのロケール。暗黙のfallbackは行わないため、呼び出し側は必ず明示する */
+  locale: ImplementedLocaleKey;
+  /** このページのkey。Astro.url.pathnameから暗黙に解決せず、呼び出し側(route file)が明示する */
+  pageKey: ToolPageKey;
+  /** ページ固有のレイアウト調整が必要な場合だけmainへ付与するクラス */
+  mainClass?: string;
+}
+
+const { locale, pageKey, mainClass } = Astro.props;
+
+// 実際のURLとprops(locale・pageKey)が一致することをbuild時に検証する。
+// 「未知パスをdefaultへ黙ってfallbackする」設計を避けるため、不一致は例外として扱う。
+const { locale: urlLocale, pathname: urlPathnameWithoutLocale } = stripLocalePrefix(
+  Astro.url.pathname,
+);
+const resolvedKey = resolvePublicPageKeyStrict(urlPathnameWithoutLocale);
+if (urlLocale !== locale || resolvedKey !== pageKey) {
+  throw new Error(
+    `ToolPageLayout: props (locale="${locale}", pageKey="${pageKey}") do not match the actual URL ` +
+      `"${Astro.url.pathname}" (resolved locale="${urlLocale}", key="${resolvedKey}").`,
+  );
+}
+
+const definition = getToolDefinition(pageKey);
+const content = getToolContent(locale, pageKey);
+// <title>はcontent.seoTitleを使う(content.headingはh1専用、PR A3でSEO title/h1を分離した)。
+const pageTitle = content.seoTitle;
+
+// サイト全体のインデックス許可は環境変数PUBLIC_ALLOW_INDEXINGで制御する(ビルド時に固定)。
+// 未設定・"true"以外の値は安全側としてnoindexにする。ページ個別のindexable=falseは
+// 全体設定がtrueでも常に優先してnoindexにする(下記resolveIsIndexableのAND条件)。
+// en/ja問わず、同じpageKeyは同じindexable設定を共有する。
+const globalIndexingEnabled = isGlobalIndexingEnabled(import.meta.env.PUBLIC_ALLOW_INDEXING);
+const isIndexable = resolveIsIndexable(globalIndexingEnabled, definition.indexable);
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: `${BRAND_NAME} — ${content.heading}`,
+  applicationCategory: "MultimediaApplication",
+  operatingSystem: "Any",
+  description: content.description,
+};
+
+const origin = Astro.site ? Astro.site.toString().replace(/\/+$/, "") : "";
+// canonicalは常に、Cloudflare上で直接200になる最終到達URL(locale prefix・末尾スラッシュ込み)を指す。
+const canonicalPath = buildLocalizedPagePath(locale, pageKey);
+const alternateUrls = buildPageAlternateUrls(origin, pageKey);
+const xDefaultUrl = buildXDefaultUrl(origin, pageKey);
+const homeHref = buildLocalizedPagePath(locale, "default");
+---
+
+<BaseLayout
+  locale={locale}
+  title={pageTitle}
+  description={content.description}
+  canonicalPath={canonicalPath}
+  indexable={isIndexable}
+  structuredData={structuredData}
+  alternateUrls={alternateUrls}
+  xDefaultUrl={xDefaultUrl}
+>
+  <UmamiAnalytics slot="head" />
+  <header class="site-header">
+    <div class="site-header__bar">
+      <a class="site-header__brand" href={homeHref}><BrandLogo /></a>
+      <SiteNav locale={locale} currentKey={pageKey} />
+      <LanguageSwitcher locale={locale} pageKey={pageKey} />
+    </div>
+  </header>
+  <main class={mainClass}>
+    <h1>{content.heading}</h1>
+    <slot />
+  </main>
+  <SiteFooter locale={locale} currentKey={pageKey} />
+</BaseLayout>

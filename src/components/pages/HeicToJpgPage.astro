@@ -1,0 +1,50 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import { ImageWorkbench } from "../ImageWorkbench";
+import RichParagraph from "../RichParagraph.astro";
+import FaqSection from "../FaqSection.astro";
+import ToolSpecs from "../ToolSpecs.astro";
+import RelatedToolLinks from "../RelatedToolLinks.astro";
+import { getToolPageAbout } from "../../i18n/get-page-content";
+import { getToolContent } from "../../i18n/get-tool-content";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+const about = getToolPageAbout(locale, "heic-to-jpg");
+const formatsHint = getToolContent(locale, "heic-to-jpg").formats;
+---
+
+<ToolPageLayout locale={locale} pageKey="heic-to-jpg">
+  <RichParagraph locale={locale} segments={about.intro} class="lede" />
+  <ImageWorkbench client:load locale={locale} formatsHint={formatsHint} />
+  <ToolSpecs heading={about.specsHeading} items={about.specs} />
+  <section class="tool-page-notes">
+    <h2>{about.featuresHeading}</h2>
+    <ul>
+      {about.features.map((feature) => <li>{feature}</li>)}
+    </ul>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.howToHeading}</h2>
+    <ol>
+      {about.howToSteps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.limitationsHeading}</h2>
+    <ul>
+      {about.limitations.map((limitation) => <li>{limitation}</li>)}
+    </ul>
+    {about.technicalNote.map((paragraph) => <RichParagraph locale={locale} segments={paragraph} />)}
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.privacyHeading}</h2>
+    <p>{about.privacyNote}</p>
+  </section>
+  <FaqSection heading={about.faqHeading} items={about.faq} />
+  <RelatedToolLinks locale={locale} heading={about.relatedHeading} links={about.relatedLinks} />
+</ToolPageLayout>

@@ -1,0 +1,46 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import { SignatureResizerWorkbench } from "../SignatureResizerWorkbench";
+import RichParagraph from "../RichParagraph.astro";
+import FaqSection from "../FaqSection.astro";
+import RelatedToolLinks from "../RelatedToolLinks.astro";
+import { getToolPageAbout } from "../../i18n/get-page-content";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+}
+
+const { locale } = Astro.props;
+const about = getToolPageAbout(locale, "signature-resizer");
+---
+
+<ToolPageLayout locale={locale} pageKey="signature-resizer">
+  <RichParagraph locale={locale} segments={about.intro} class="lede" />
+  <SignatureResizerWorkbench client:load locale={locale} />
+  <section class="tool-page-notes">
+    <h2>{about.featuresHeading}</h2>
+    <ul>
+      {about.features.map((feature) => <li>{feature}</li>)}
+    </ul>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.howToHeading}</h2>
+    <ol>
+      {about.howToSteps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.limitationsHeading}</h2>
+    <ul>
+      {about.limitations.map((limitation) => <li>{limitation}</li>)}
+    </ul>
+    {about.technicalNote.map((paragraph) => <RichParagraph locale={locale} segments={paragraph} />)}
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.privacyHeading}</h2>
+    <p>{about.privacyNote}</p>
+  </section>
+  <FaqSection heading={about.faqHeading} items={about.faq} />
+  <RelatedToolLinks locale={locale} heading={about.relatedHeading} links={about.relatedLinks} />
+</ToolPageLayout>

@@ -1,0 +1,58 @@
+---
+import ToolPageLayout from "../../layouts/ToolPageLayout.astro";
+import { RasterToJpgWorkbench } from "../RasterToJpgWorkbench";
+import RichParagraph from "../RichParagraph.astro";
+import FaqSection from "../FaqSection.astro";
+import RelatedToolLinks from "../RelatedToolLinks.astro";
+import { getToolPageAbout } from "../../i18n/get-page-content";
+import type { ImplementedLocaleKey } from "../../i18n/get-dictionary";
+import type { RasterSourceFormat } from "../image-intake/raster-convert-types";
+
+/** png-to-jpg・webp-to-jpg・avif-to-jpgの3ページで共有するpageKey */
+export type RasterToJpgPageKey = "png-to-jpg" | "webp-to-jpg" | "avif-to-jpg";
+
+interface Props {
+  locale: ImplementedLocaleKey;
+  pageKey: RasterToJpgPageKey;
+  sourceFormat: RasterSourceFormat;
+  sourceFormatLabel: string;
+}
+
+const { locale, pageKey, sourceFormat, sourceFormatLabel } = Astro.props;
+const about = getToolPageAbout(locale, pageKey);
+---
+
+<ToolPageLayout locale={locale} pageKey={pageKey}>
+  <RichParagraph locale={locale} segments={about.intro} class="lede" />
+  <RasterToJpgWorkbench
+    client:load
+    locale={locale}
+    sourceFormat={sourceFormat}
+    sourceFormatLabel={sourceFormatLabel}
+  />
+  <section class="tool-page-notes">
+    <h2>{about.featuresHeading}</h2>
+    <ul>
+      {about.features.map((feature) => <li>{feature}</li>)}
+    </ul>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.howToHeading}</h2>
+    <ol>
+      {about.howToSteps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.limitationsHeading}</h2>
+    <ul>
+      {about.limitations.map((limitation) => <li>{limitation}</li>)}
+    </ul>
+    {about.technicalNote.map((paragraph) => <RichParagraph locale={locale} segments={paragraph} />)}
+  </section>
+  <section class="tool-page-notes">
+    <h2>{about.privacyHeading}</h2>
+    <p>{about.privacyNote}</p>
+  </section>
+  <FaqSection heading={about.faqHeading} items={about.faq} />
+  <RelatedToolLinks locale={locale} heading={about.relatedHeading} links={about.relatedLinks} />
+</ToolPageLayout>

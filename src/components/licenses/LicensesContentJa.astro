@@ -1,0 +1,371 @@
+<p class="lede licenses-intro">
+  FileFitは、第三者のオープンソースソフトウェア(OSS)を利用して構築されています。ここでは、実際にFileFitのブラウザ向け配布物(サイト・Web
+  Worker)に含まれるソフトウェア、およびビルド時にのみ使用するソフトウェアについて、名称・バージョン・用途・ライセンス・著作権表示・公式ソースの所在を掲載します。各ライセンスの全文は、下記の各項目からリンクしているテキストファイルでご確認いただけます。
+</p>
+
+<section class="license-group" aria-labelledby="heic-heading">
+  <h2 id="heic-heading">HEICデコード(HEIC/HEIF → JPG変換)</h2>
+  <p>
+    FileFitは、HEIC/HEIF画像のデコードに<code>@discourse/heic</code
+    >(バージョン1.0.0)を使用しています。このパッケージ本体はApache
+    License 2.0で提供されるラッパーですが、実際にブラウザへ配布されるHEICデコード用WebAssembly(<code
+      >heic_dec.wasm</code
+    >)には、libheif(バージョン1.19.7)とlibde265(バージョン1.0.15)が含まれています。libheif・libde265のライブラリ本体はいずれもGNU
+    Lesser General Public License version 3(LGPL
+    v3)で提供されており、上流のビルドスクリプト(<code>Makefile</code
+    >)上ではこの2つのライブラリを静的リンクして単一のWASMファイルを生成しています。ビルド設定上、x265等のHEICエンコーダーや他の動画コーデックは含まれておらず、FileFitはHEIC画像の<strong
+      >デコード(読み込み)のみ</strong
+    >を行い、HEIC形式でのエンコード(書き出し)は行っていません。FileFit自身のコードは、このパッケージが公開している<code
+      >decode()</code
+    >関数を呼び出すのみで、WASMバイナリ・JSラッパーのいずれも改変していないことを確認しています。
+  </p>
+  <div class="license-note" role="note">
+    <p>
+      libheif・libde265(LGPL v3)に対応するsource packageとして、<a
+        href="/source/filefit-heic-decoder-1.0.0-source.tar.gz"
+        >filefit-heic-decoder-1.0.0-source.tar.gz</a
+      >を提供しています。このpackageには、上記exact
+      version(libheif 1.19.7・libde265 1.0.15・jSquash該当commit)に対応するsource一式、再ビルド手順、libheif・libde265それぞれの改変版library再リンク手順を含みます。<strong
+        >このpackageはFileFitの技術・ライセンス自己レビューに基づくもので、外部法律専門家による確認、法的助言、法的十分性の保証を意味しません。LGPL対応が完了したことも断定しません。</strong
+      >技術的に何を実証済み・未実証としているかの詳細は、package内の<code>README.md</code>をご確認ください。
+    </p>
+    <p>
+      対応するWASMをFileFitが配信している間、対応するこのsource
+      packageも同じ場所で無料公開を継続します。バージョンを更新した場合は、新しいバージョン番号付きのpackageを別途公開します。
+    </p>
+  </div>
+
+  <div class="license-entry">
+    <h3>@discourse/heic</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>1.0.0</dd>
+      <dt>用途</dt>
+      <dd>HEIC/HEIFデコードWASMのJSラッパー(jSquash由来)</dd>
+      <dt>ライセンス</dt>
+      <dd>Apache License 2.0</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright [2023] jamsinclair</dd>
+      <dt>公式ソース</dt>
+      <dd><a href="https://github.com/discourse/jSquash">GitHub: discourse/jSquash</a></dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/apache-2.0.txt">Apache License 2.0 全文</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>libheif</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>1.19.7(HEICデコードWASMに静的リンクして含まれる)</dd>
+      <dt>用途</dt>
+      <dd>HEIF/HEICコンテナの処理</dd>
+      <dt>ライセンス</dt>
+      <dd>GNU Lesser General Public License v3(ライブラリ本体)</dd>
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/strukturag/libheif/tree/v1.19.7"
+          >GitHub: strukturag/libheif(v1.19.7)</a
+        >
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd>
+        <a href="/licenses/lgpl-3.0.txt">GNU LGPL v3 全文</a>(GPL v3を参照するため<a
+          href="/licenses/gpl-3.0.txt">GNU GPL v3 全文</a
+        >もあわせて掲載)
+      </dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>libde265</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>1.0.15(HEICデコードWASMに静的リンクして含まれる)</dd>
+      <dt>用途</dt>
+      <dd>HEVC(H.265)デコード</dd>
+      <dt>ライセンス</dt>
+      <dd>GNU Lesser General Public License v3(ライブラリ本体)</dd>
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/strukturag/libde265/tree/v1.0.15"
+          >GitHub: strukturag/libde265(v1.0.15)</a
+        >
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd>
+        <a href="/licenses/lgpl-3.0.txt">GNU LGPL v3 全文</a>(GPL v3を参照するため<a
+          href="/licenses/gpl-3.0.txt">GNU GPL v3 全文</a
+        >もあわせて掲載)
+      </dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>Emscripten runtime(HEICデコードWASMのビルドツールチェーン)</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>3.1.57</dd>
+      <dt>用途</dt>
+      <dd>
+        HEICデコードWASM(<code>heic_dec.wasm</code>)は、上記のEmscripten
+        3.1.57でビルドされています。生成されるJSラッパー(<code>heic_dec.js</code
+        >)には、Emscriptenのruntime補助コードが含まれます。Emscripten本体・musl
+        libcのソース一式はこのサイト・source
+        packageのいずれにも同梱していません(理由の詳細はsource
+        package内の<code>README.md</code>を参照)
+      </dd>
+      <dt>ライセンス</dt>
+      <dd
+        >MIT License / University of Illinois-NCSA Open Source License(Emscripten本体)、MIT
+        License(musl libc)</dd
+      >
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/emscripten-core/emscripten"
+          >GitHub: emscripten-core/emscripten</a
+        >
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd>
+        <a href="/licenses/mit-emscripten.txt">Emscripten LICENSE 全文</a>・<a
+          href="/licenses/mit-musl.txt">musl COPYRIGHT 全文</a
+        >
+      </dd>
+    </dl>
+    <p class="license-note-inline">
+      より詳細な構成要素(libc++・libc++abi等)の技術的な内訳は<code
+        >THIRD_PARTY_NOTICES.md</code
+      >、および対応ソースpackageの<code>SOURCE-METADATA.json</code
+      >・<code>LICENSE-MAP.md</code>をご確認ください。
+    </p>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="png-heading">
+  <h2 id="png-heading">PNG圧縮</h2>
+  <p>
+    FileFitは、PNG画像の指定容量圧縮に<code>@upng/upng-js</code
+    >(バージョン2.2.2)を使用しています。このパッケージは、Photopeaによるオリジナルの<code
+      >UPNG.js</code
+    >を、webLiangが別のnpmスコープ(<code>@upng/upng-js</code
+    >)として公開したものです。ライセンス本文・著作権表示はオリジナルと一致しています。エンコード処理の一部で<code
+      >pako</code
+    >(バージョン2.2.0)を利用しています。
+  </p>
+
+  <div class="license-entry">
+    <h3>@upng/upng-js</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>2.2.2</dd>
+      <dt>用途</dt>
+      <dd>PNGエンコード(Web Worker内、動的読み込み)</dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (c) 2017 Photopea</dd>
+      <dt>公式ソース(npm配布元)</dt>
+      <dd><a href="https://github.com/webLiang/UPNG.js">GitHub: webLiang/UPNG.js</a></dd>
+      <dt>オリジナルプロジェクト</dt>
+      <dd>
+        <a href="https://github.com/photopea/UPNG.js">GitHub: photopea/UPNG.js</a>
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-upng.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>pako</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>2.2.0</dd>
+      <dt>用途</dt>
+      <dd>PNGエンコード処理内でのdeflate圧縮(@upng/upng-js経由)</dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn</dd>
+      <dt>公式ソース</dt>
+      <dd><a href="https://github.com/nodeca/pako">GitHub: nodeca/pako</a></dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-pako.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="ui-heading">
+  <h2 id="ui-heading">UIランタイム(Preactコンポーネントをclient:loadで読み込むページのみ)</h2>
+  <p>
+    トップページと6つのツールページ(<code>/heic-to-jpg</code>・<code>/compress-image</code
+    >・<code>/compress-image-to-500kb</code>・<code>/remove-exif</code>・<code
+      >/png-to-webp</code
+    >・<code>/compress-png</code
+    >、あわせて7ページ)は、Preactコンポーネントを<code>client:load</code
+    >で読み込むため、Preact本体とAstro
+    Islandクライアントランタイム(下記)がブラウザへ配布されます。このページ(<code
+      >/licenses</code
+    >)と404ページは、これらのJavaScriptを一切読み込まない静的なHTML・CSSのみのページです。
+  </p>
+
+  <div class="license-entry">
+    <h3>preact</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>10.29.7</dd>
+      <dt>用途</dt>
+      <dd>UIランタイム(上記7ページで配布)</dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (c) 2015-present Jason Miller</dd>
+      <dt>公式ソース</dt>
+      <dd><a href="https://github.com/preactjs/preact">GitHub: preactjs/preact</a></dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-preact.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>Astro Islandクライアントランタイム</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>Astro 7.1.3由来(<code>client.js</code>としてビルドされる部分)</dd>
+      <dt>用途</dt>
+      <dd>
+        上記7ページで、<code>client:load</code>指定されたPreactコンポーネントの起動・hydrationを行う。Astro本体のうち、静的HTML生成・コンパイルを行う部分(下記「ビルドツール」)とは異なり、この部分のみがブラウザへ配布される
+      </dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (c) 2021 Fred K. Schott</dd>
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/withastro/astro">GitHub: withastro/astro</a>
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>@astrojs/preact</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>6.0.1</dd>
+      <dt>用途</dt>
+      <dd>
+        Astro⇔Preact統合。ビルド構成(Vite連携等)に加え、上記Astro
+        Islandクライアントランタイムの一部としてブラウザへ配布される
+      </dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (c) 2021 Fred K. Schott</dd>
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/withastro/astro/tree/main/packages/integrations/preact"
+          >GitHub: withastro/astro(packages/integrations/preact)</a
+        >
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>@preact/signals・@preact/signals-core</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>@preact/signals 2.10.0 / @preact/signals-core 1.14.4</dd>
+      <dt>用途</dt>
+      <dd>
+        Astro
+        Islandクライアントランタイムが、Preact
+        Signalsを使ったpropsを持つコンポーネントの起動時にのみ動的読み込みする状態管理ライブラリ。ビルド成果物には含まれますが、2026年7月時点のFileFitのコンポーネントはPreact
+        Signalsを使ったpropsを渡していないため、実際のページ読み込み時にはこのモジュールは読み込まれないことを、実ブラウザのNetworkログで確認しています
+      </dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>Copyright (c) 2022-present Preact Team</dd>
+      <dt>公式ソース</dt>
+      <dd><a href="https://github.com/preactjs/signals">GitHub: preactjs/signals</a></dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-preact-signals.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="icons-heading">
+  <h2 id="icons-heading">UIアイコン(ビルド時にSVGとして埋め込み、JavaScriptなし)</h2>
+  <p>
+    Lucideのアイコンはビルド時にinline SVGとしてHTMLへ直接展開しています。アイコンフォント・spriteシート・専用JavaScriptのいずれもブラウザへ配布していません。使用しているアイコンは6種類で、<code
+      >chevron-down</code
+    >はサイトナビゲーションを描画する全ページ(ビルドされる34ページ中30ページ)に、<code
+      >arrow-left-right</code
+    >・<code>arrow-right</code>・<code>chart-no-axes-column-increasing</code>・<code>file-search</code
+    >・<code>trash-2</code>はトップページ2件(<code>/</code>・<code>/ja/</code>)にのみ含まれます。このページ(<code
+      >/ja/licenses</code
+    >)と404ページはサイトナビゲーションを描画しないため、Lucideのアイコンを一切含みません。
+  </p>
+  <p>
+    Lucide自身のライセンスファイルは2種類のアイコン群を区別しており、LimiFileはその両方を配布しています。LucideがFeatherプロジェクトから派生させたアイコンにはFeatherのMIT
+    Licenseが、それ以外にはLucideのISC
+    Licenseが適用されます。上記6種類のうち<code>chevron-down</code>・<code>arrow-right</code>・<code
+      >trash-2</code
+    >がFeather由来(MIT)で、残る3種類がLucide独自(ISC)です。下記のライセンス全文ファイルには、Lucideが配布しているとおり両方の表示をそのまま収録しています。
+  </p>
+
+  <div class="license-entry">
+    <h3>@lucide/astro</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>1.32.0</dd>
+      <dt>用途</dt>
+      <dd>
+        UIアイコン(ビルド時にSVGとして埋め込み)。パッケージ自体はブラウザへ配布されず、生成されたSVG要素のみが配布されます。
+      </dd>
+      <dt>ライセンス</dt>
+      <dd>ISC License(Lucide)、およびFeatherプロジェクト由来アイコンのMIT License</dd>
+      <dt>著作権表示</dt>
+      <dd>
+        Copyright (c) 2026 Lucide Icons and Contributors / Copyright (c) 2013-present Cole Bemis(Feather由来アイコン)
+      </dd>
+      <dt>公式ソース</dt>
+      <dd>
+        <a href="https://github.com/lucide-icons/lucide/tree/main/packages/astro"
+          >GitHub: lucide-icons/lucide (packages/astro)</a
+        >
+      </dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/isc-mit-lucide.txt">ISC License・Feather MIT License 全文</a></dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="build-heading">
+  <h2 id="build-heading">ビルドツール(静的HTML生成・コンパイル部分)</h2>
+  <p>
+    以下は、サイトを静的HTMLとして生成するビルド時に使用されるAstroの機能です。Astroパッケージ全体がブラウザへ配布されるわけではありませんが、<code
+      >client:load</code
+    >を使う7ページでは、同じAstroパッケージ由来の「Astro
+    Islandクライアントランタイム」(上記「UIランタイム」の節を参照)がブラウザへ配布されます。
+  </p>
+  <div class="license-entry">
+    <h3>Astro(静的サイト生成・コンパイラ部分)</h3>
+    <dl>
+      <dt>バージョン</dt>
+      <dd>7.1.3</dd>
+      <dt>用途</dt>
+      <dd>静的HTML生成・コンパイル(ビルド時のみ実行、ブラウザへは配布されない)</dd>
+      <dt>ライセンス</dt>
+      <dd>MIT License</dd>
+      <dt>公式ソース</dt>
+      <dd><a href="https://github.com/withastro/astro">GitHub: withastro/astro</a></dd>
+      <dt>ライセンス全文</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License 全文</a></dd>
+    </dl>
+  </div>
+</section>

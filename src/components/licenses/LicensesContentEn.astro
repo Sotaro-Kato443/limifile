@@ -1,0 +1,379 @@
+<p class="lede licenses-intro">
+  FileFit is built using third-party open source software (OSS). This page lists the software
+  actually included in FileFit's browser-facing distribution (the site and its Web Workers), as
+  well as software used only at build time — name, version, purpose, license, copyright notice,
+  and official source for each. The full text of each license is available from the text file
+  linked in each entry below.
+</p>
+
+<section class="license-group" aria-labelledby="heic-heading">
+  <h2 id="heic-heading">HEIC decoding (HEIC/HEIF → JPG conversion)</h2>
+  <p>
+    FileFit uses <code>@discourse/heic</code> (version 1.0.0) to decode HEIC/HEIF images. This
+    package itself is an Apache License 2.0 wrapper, but the HEIC-decoding WebAssembly it actually
+    ships to the browser (<code>heic_dec.wasm</code>) includes libheif (version 1.19.7) and
+    libde265 (version 1.0.15). The libheif and libde265 library code is each provided under the
+    GNU Lesser General Public License version 3 (LGPL v3), and the upstream build script
+    (<code>Makefile</code>) statically links these two libraries into a single WASM file. The
+    build configuration does not include x265 or any other HEIC encoder or video codec, and
+    FileFit only <strong>decodes (reads)</strong> HEIC images — it does not encode (write out) the
+    HEIC format. FileFit's own code only calls the <code>decode()</code> function this package
+    exposes; we have confirmed that neither the WASM binary nor the JS wrapper has been modified.
+  </p>
+  <div class="license-note" role="note">
+    <p>
+      We provide <a href="/source/filefit-heic-decoder-1.0.0-source.tar.gz"
+        >filefit-heic-decoder-1.0.0-source.tar.gz</a
+      > as the source package corresponding to libheif and libde265 (LGPL v3). This package
+      contains the full source corresponding to the exact versions above (libheif 1.19.7, libde265
+      1.0.15, and the relevant jSquash commit), rebuild instructions, and relink instructions for
+      modified versions of libheif and libde265 respectively.
+      <strong
+        >This package is based on FileFit's own technical and license self-review; it does not
+        represent confirmation by an outside legal professional, legal advice, or a guarantee of
+        legal sufficiency. It also does not assert that LGPL compliance has been completed.</strong
+      > For details on exactly what has and has not been technically verified, see the
+      <code>README.md</code> inside the package.
+    </p>
+    <p>
+      For as long as FileFit distributes the corresponding WASM, this corresponding source package
+      will continue to be published free of charge in the same location. If the version is
+      updated, a new, separately versioned package will be published.
+    </p>
+  </div>
+
+  <div class="license-entry">
+    <h3>@discourse/heic</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>1.0.0</dd>
+      <dt>Purpose</dt>
+      <dd>JS wrapper for the HEIC/HEIF decoding WASM (from jSquash)</dd>
+      <dt>License</dt>
+      <dd>Apache License 2.0</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright [2023] jamsinclair</dd>
+      <dt>Official source</dt>
+      <dd><a href="https://github.com/discourse/jSquash">GitHub: discourse/jSquash</a></dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/apache-2.0.txt">Apache License 2.0 (full text)</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>libheif</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>1.19.7 (statically linked into the HEIC-decoding WASM)</dd>
+      <dt>Purpose</dt>
+      <dd>HEIF/HEIC container handling</dd>
+      <dt>License</dt>
+      <dd>GNU Lesser General Public License v3 (library itself)</dd>
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/strukturag/libheif/tree/v1.19.7"
+          >GitHub: strukturag/libheif (v1.19.7)</a
+        >
+      </dd>
+      <dt>Full license text</dt>
+      <dd>
+        <a href="/licenses/lgpl-3.0.txt">GNU LGPL v3 (full text)</a> (GNU
+        <a href="/licenses/gpl-3.0.txt">GPL v3 (full text)</a> is also included, since LGPL v3 references
+        it)
+      </dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>libde265</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>1.0.15 (statically linked into the HEIC-decoding WASM)</dd>
+      <dt>Purpose</dt>
+      <dd>HEVC (H.265) decoding</dd>
+      <dt>License</dt>
+      <dd>GNU Lesser General Public License v3 (library itself)</dd>
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/strukturag/libde265/tree/v1.0.15"
+          >GitHub: strukturag/libde265 (v1.0.15)</a
+        >
+      </dd>
+      <dt>Full license text</dt>
+      <dd>
+        <a href="/licenses/lgpl-3.0.txt">GNU LGPL v3 (full text)</a> (GNU
+        <a href="/licenses/gpl-3.0.txt">GPL v3 (full text)</a> is also included, since LGPL v3 references
+        it)
+      </dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>Emscripten runtime (build toolchain for the HEIC-decoding WASM)</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>3.1.57</dd>
+      <dt>Purpose</dt>
+      <dd>
+        The HEIC-decoding WASM (<code>heic_dec.wasm</code>) is built with the Emscripten version
+        above. The generated JS wrapper (<code>heic_dec.js</code>) includes Emscripten's runtime
+        support code. We do not bundle the full Emscripten or musl libc source with this site or
+        the source package (see the <code>README.md</code> inside the source package for why).
+      </dd>
+      <dt>License</dt>
+      <dd
+        >MIT License / University of Illinois-NCSA Open Source License (Emscripten itself), MIT
+        License (musl libc)</dd
+      >
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/emscripten-core/emscripten"
+          >GitHub: emscripten-core/emscripten</a
+        >
+      </dd>
+      <dt>Full license text</dt>
+      <dd>
+        <a href="/licenses/mit-emscripten.txt">Emscripten LICENSE (full text)</a> ·
+        <a href="/licenses/mit-musl.txt">musl COPYRIGHT (full text)</a>
+      </dd>
+    </dl>
+    <p class="license-note-inline">
+      For a more detailed technical breakdown of components (libc++, libc++abi, etc.), see
+      <code>THIRD_PARTY_NOTICES.md</code> and the source package's <code>SOURCE-METADATA.json</code
+      > and <code>LICENSE-MAP.md</code>.
+    </p>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="png-heading">
+  <h2 id="png-heading">PNG compression</h2>
+  <p>
+    FileFit uses <code>@upng/upng-js</code> (version 2.2.2) for target-size PNG compression. This
+    package is Photopea's original <code>UPNG.js</code>, published by webLiang under a different
+    npm scope (<code>@upng/upng-js</code>). Its license text and copyright notice match the
+    original. Part of the encoding process uses <code>pako</code> (version 2.2.0).
+  </p>
+
+  <div class="license-entry">
+    <h3>@upng/upng-js</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>2.2.2</dd>
+      <dt>Purpose</dt>
+      <dd>PNG encoding (inside a Web Worker, loaded dynamically)</dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (c) 2017 Photopea</dd>
+      <dt>Official source (npm distribution)</dt>
+      <dd><a href="https://github.com/webLiang/UPNG.js">GitHub: webLiang/UPNG.js</a></dd>
+      <dt>Original project</dt>
+      <dd>
+        <a href="https://github.com/photopea/UPNG.js">GitHub: photopea/UPNG.js</a>
+      </dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-upng.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>pako</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>2.2.0</dd>
+      <dt>Purpose</dt>
+      <dd>Deflate compression inside the PNG encoding process (via @upng/upng-js)</dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn</dd>
+      <dt>Official source</dt>
+      <dd><a href="https://github.com/nodeca/pako">GitHub: nodeca/pako</a></dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-pako.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="ui-heading">
+  <h2 id="ui-heading">UI runtime (pages that load Preact components with client:load only)</h2>
+  <p>
+    The home page and six tool pages (<code>/heic-to-jpg</code>, <code>/compress-image</code>,
+    <code>/compress-image-to-500kb</code>, <code>/remove-exif</code>, <code>/png-to-webp</code>, and
+    <code>/compress-png</code> — seven pages in total, across both locales) load Preact components
+    with <code>client:load</code>, so Preact itself and the Astro Island client runtime (below) are
+    shipped to the browser. This page (<code>/licenses</code>) and the 404 pages are static
+    HTML/CSS-only pages that never load any of this JavaScript.
+  </p>
+
+  <div class="license-entry">
+    <h3>preact</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>10.29.7</dd>
+      <dt>Purpose</dt>
+      <dd>UI runtime (shipped on the pages above)</dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (c) 2015-present Jason Miller</dd>
+      <dt>Official source</dt>
+      <dd><a href="https://github.com/preactjs/preact">GitHub: preactjs/preact</a></dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-preact.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>Astro Island client runtime</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>From Astro 7.1.3 (the part built as <code>client.js</code>)</dd>
+      <dt>Purpose</dt>
+      <dd>
+        Boots and hydrates the Preact components marked <code>client:load</code> on the pages
+        above. Unlike the part of Astro that generates and compiles static HTML (see "Build
+        tools" below), only this part is shipped to the browser.
+      </dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (c) 2021 Fred K. Schott</dd>
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/withastro/astro">GitHub: withastro/astro</a>
+      </dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>@astrojs/preact</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>6.0.1</dd>
+      <dt>Purpose</dt>
+      <dd>
+        Astro/Preact integration. In addition to build configuration (Vite wiring, etc.), it is
+        also shipped to the browser as part of the Astro Island client runtime above.
+      </dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (c) 2021 Fred K. Schott</dd>
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/withastro/astro/tree/main/packages/integrations/preact"
+          >GitHub: withastro/astro (packages/integrations/preact)</a
+        >
+      </dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+
+  <div class="license-entry">
+    <h3>@preact/signals and @preact/signals-core</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>@preact/signals 2.10.0 / @preact/signals-core 1.14.4</dd>
+      <dt>Purpose</dt>
+      <dd>
+        A state-management library that the Astro Island client runtime dynamically loads only
+        when booting a component whose props use Preact Signals. It is included in the build
+        output, but as of July 2026 none of FileFit's components pass props that use Preact
+        Signals, so we have confirmed in real-browser network logs that this module is not
+        actually fetched during normal page loads.
+      </dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Copyright notice</dt>
+      <dd>Copyright (c) 2022-present Preact Team</dd>
+      <dt>Official source</dt>
+      <dd><a href="https://github.com/preactjs/signals">GitHub: preactjs/signals</a></dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-preact-signals.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="icons-heading">
+  <h2 id="icons-heading">Interface icons (inlined as SVG markup at build time, no JavaScript)</h2>
+  <p>
+    Lucide icons are rendered into the HTML as inline SVG during the build. No icon font, no sprite
+    sheet, and no JavaScript is shipped for them. Six icons are used in total:
+    <code>chevron-down</code> appears in the site navigation on every page that renders it (30 of the
+    34 built pages), and <code>arrow-left-right</code>, <code>arrow-right</code>,
+    <code>chart-no-axes-column-increasing</code>, <code>file-search</code>, and
+    <code>trash-2</code> appear only on the two home pages (<code>/</code> and <code>/ja/</code>).
+    This page (<code>/licenses</code>) and the 404 pages contain no Lucide icons at all, because they
+    do not render the site navigation.
+  </p>
+  <p>
+    Lucide's own license file covers two different sets of icons, and both sets are present here.
+    Icons that Lucide derives from the Feather project carry Feather's MIT license, and the rest
+    carry Lucide's ISC license. Of the six icons above, <code>chevron-down</code>,
+    <code>arrow-right</code>, and <code>trash-2</code> are Feather-derived (MIT); the other three are
+    Lucide originals (ISC). Both notices are reproduced in the single license file linked below,
+    exactly as Lucide distributes them.
+  </p>
+
+  <div class="license-entry">
+    <h3>@lucide/astro</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>1.32.0</dd>
+      <dt>Purpose</dt>
+      <dd>
+        Interface icons, inlined as SVG markup at build time. The package itself is not shipped to
+        the browser — only the resulting SVG elements are.
+      </dd>
+      <dt>License</dt>
+      <dd>
+        ISC License (Lucide), and the MIT License for the icons Lucide derives from the Feather
+        project
+      </dd>
+      <dt>Copyright notice</dt>
+      <dd>
+        Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis
+        (Feather-derived icons)
+      </dd>
+      <dt>Official source</dt>
+      <dd>
+        <a href="https://github.com/lucide-icons/lucide/tree/main/packages/astro"
+          >GitHub: lucide-icons/lucide (packages/astro)</a
+        >
+      </dd>
+      <dt>Full license text</dt>
+      <dd>
+        <a href="/licenses/isc-mit-lucide.txt">ISC License and Feather MIT License (full text)</a>
+      </dd>
+    </dl>
+  </div>
+</section>
+
+<section class="license-group" aria-labelledby="build-heading">
+  <h2 id="build-heading">Build tools (static HTML generation / compiler part)</h2>
+  <p>
+    The following is the part of Astro used at build time to generate the site as static HTML.
+    The Astro package as a whole is not shipped to the browser, but on the seven pages that use
+    <code>client:load</code>, the "Astro Island client runtime" from the same Astro package (see
+    the "UI runtime" section above) is shipped to the browser.
+  </p>
+  <div class="license-entry">
+    <h3>Astro (static site generation / compiler part)</h3>
+    <dl>
+      <dt>Version</dt>
+      <dd>7.1.3</dd>
+      <dt>Purpose</dt>
+      <dd>Static HTML generation and compilation (runs only at build time, not shipped to the browser)</dd>
+      <dt>License</dt>
+      <dd>MIT License</dd>
+      <dt>Official source</dt>
+      <dd><a href="https://github.com/withastro/astro">GitHub: withastro/astro</a></dd>
+      <dt>Full license text</dt>
+      <dd><a href="/licenses/mit-astro.txt">MIT License (full text)</a></dd>
+    </dl>
+  </div>
+</section>
