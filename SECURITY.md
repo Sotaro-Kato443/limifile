@@ -12,9 +12,10 @@ Report privately by email:
 
 This is the same address published on <https://limifile.com/contact/>.
 
-Once this repository is public, GitHub's Private Vulnerability Reporting will
-be enabled on it as well, and reports through that channel are equally welcome.
-Until then — and at any time, if you prefer — email is the reliable route.
+GitHub's Private Vulnerability Reporting is enabled on this repository, and
+reports through that channel are equally welcome — use the "Report a
+vulnerability" button on the Security tab. Either route reaches us, so use
+whichever you prefer.
 
 A useful report usually includes what you did, what happened, what you expected
 instead, and the browser and OS you saw it on. A minimal reproduction helps more
@@ -23,7 +24,7 @@ anyway; sorting that out is not your job.
 
 ## What to report privately
 
-Report these by email rather than as an issue:
+Report these privately rather than as an issue:
 
 - **A selected file leaving the device unintentionally.** LimiFile's central
   claim is that selected images are processed in the browser and are not
