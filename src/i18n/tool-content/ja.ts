@@ -10,7 +10,7 @@ import type { ToolContent } from "../schema";
  */
 export const ja: Record<LocalizedToolPageKey, ToolContent> = {
   default: {
-    heading: "画像をブラウザ内で処理する",
+    heading: "画像処理をもっとシンプルに",
     description:
       "LimiFileは、画像の形式変換・圧縮・メタデータ削除をこの端末内だけで行うツール集です。画像データを外部サーバーへ送信することはありません。",
     navLabel: "トップ",

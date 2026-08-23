@@ -8,7 +8,7 @@ import type { ToolContent } from "../schema";
  */
 export const en: Record<ToolPageKey, ToolContent> = {
   default: {
-    heading: "Process images right in your browser",
+    heading: "Make image processing simpler",
     description:
       "Convert, compress, resize, and remove metadata from images in your browser. Selected images are processed on your device, not uploaded to a LimiFile server.",
     navLabel: "Home",
