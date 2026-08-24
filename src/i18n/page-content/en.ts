@@ -20,7 +20,7 @@ export const en: PageContent = {
     intro: [
       {
         type: "text",
-        text: "LimiFile is a set of ten browser-based tools for converting, compressing, and cleaning up images — nothing is uploaded to a server.",
+        text: "Free web tools for converting, compressing, resizing, and more. Selected images are processed on your device and are not uploaded to a LimiFile server.",
       },
     ],
     popularSizesHeading: POPULAR_SIZES_HEADING,

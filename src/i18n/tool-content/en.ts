@@ -8,9 +8,9 @@ import type { ToolContent } from "../schema";
  */
 export const en: Record<ToolPageKey, ToolContent> = {
   default: {
-    heading: "Process images right in your browser",
+    heading: "Make image processing simpler",
     description:
-      "LimiFile converts, compresses, and removes metadata from JPG, PNG, WebP, HEIC, and AVIF images entirely in your browser. Ten tools, no upload, no account.",
+      "Convert, compress, resize, and remove metadata from images in your browser. Selected images are processed on your device, not uploaded to a LimiFile server.",
     navLabel: "Home",
     cardTitle: "Analyze an image",
     cardDescription: "Select an image to check its format, size, and dimensions.",

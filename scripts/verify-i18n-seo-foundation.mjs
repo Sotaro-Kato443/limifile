@@ -240,7 +240,7 @@ for (const page of notFoundPages) {
 // 英語ページの可視本文に主要な日本語UI文言が残っていないこと・日本語ページには残っていること
 // (JSON/scriptタグ内の技術的な文字列や、テストfixtureのファイル名等は誤検知の対象にしないため、
 // このチェックは実際にページ本文へ表示される見出し・文言のみを対象にする)
-const JAPANESE_MARKERS = ["画像をブラウザ内で処理する", "オープンソースライセンス", "圧縮する"];
+const JAPANESE_MARKERS = ["画像処理をもっとシンプルに", "オープンソースライセンス", "圧縮する"];
 for (const page of canonicalPages.filter((p) => p.locale === "en")) {
   const html = readDistHtml(page.distRel);
   if (html === null) continue;
@@ -253,8 +253,8 @@ for (const page of canonicalPages.filter((p) => p.locale === "ja")) {
   if (html === null) continue;
   if (page.key === "default") {
     check(
-      `${page.url}: 日本語UI文言「画像をブラウザ内で処理する」を含む`,
-      html.includes("画像をブラウザ内で処理する"),
+      `${page.url}: 日本語UI文言「画像処理をもっとシンプルに」を含む`,
+      html.includes("画像処理をもっとシンプルに"),
     );
   }
 }

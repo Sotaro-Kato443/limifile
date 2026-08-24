@@ -26,7 +26,7 @@ export const ja: LocalizedPageContent = {
     intro: [
       {
         type: "text",
-        text: "LimiFileは、画像の変換・圧縮・お手入れをブラウザ内だけで行う8つのツールです。画像をサーバーへアップロードすることはありません。",
+        text: "無料で使える、画像の変換・圧縮・リサイズなどのWebツールです。選んだ画像は端末内で処理され、LimiFileのサーバーにはアップロードされません。",
       },
     ],
     popularSizesHeading: POPULAR_SIZES_HEADING,
