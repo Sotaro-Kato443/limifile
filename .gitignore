@@ -35,3 +35,6 @@ pnpm-debug.log*
 
 # ローカル限定の監査・証跡バックアップ(LGPL rebuild proof等。リポジトリへ含めない)
 .local-backups/
+
+# 個人用の日本語プロジェクト原本(Publicへ含めない)
+PROJECT_CONTEXT.ja.private.md
